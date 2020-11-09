@@ -1,0 +1,145 @@
+module prometheus-exporter {
+    yang-version "1.1";
+
+    // namespace
+    namespace "urn:srl_sdk_apps/prometheus-exporter";
+    prefix "srl_sdk_apps-prometheus-exporter";
+
+    import srl_nokia-common {
+        prefix srl-comm;
+    }
+    import srl_nokia-system {
+        prefix srl-system;
+    }
+    import srl_nokia-network-instance {
+        prefix srl-netinst;
+    }
+    import srl_nokia-tls {
+        prefix srl-tls;
+    }
+    import srl_nokia-extensions {
+        prefix srl-ext;
+    }
+
+    // description
+    description
+        "This module defines configuration and operational state data related to the SRLinux Prometheus Exporter.";
+
+    // revision
+    revision "2020-10-15" {
+        description
+          "prometheus-exporter 0.1.0";
+    }
+    
+    grouping prometheus-exporter-top {
+        container prometheus-exporter {
+            //presence "prometheus-exporter";
+            leaf address {
+                type srl-comm:ip-address;
+                default "::";
+                srl-ext:show-importance high;
+                description "IP Address the prometheus exporter server listens on";
+            }
+            leaf port {
+                type srl-comm:port-number;
+                default "8888";
+                srl-ext:show-importance high;
+                description "Port number the prometheus exporter server listens on";
+            }
+            leaf network-instance {
+                type leafref {
+                    path "/srl-netinst:network-instance/srl-netinst:name";
+                }
+                srl-ext:show-importance high;
+                default "mgmt";
+                description
+                    "Reference to a configured network-instance used to send out telemetry updates
+                    This network-instance must already exist in the system.";
+            }
+            leaf tls-profile {
+                type leafref {
+                    path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+                }
+                srl-ext:show-importance high;
+                description
+                  "Reference to the TLS profile to use on the prometheus server";
+            }
+            leaf http-path {
+                type string;
+                default "/metrics";
+                srl-ext:show-importance high;
+                description "HTTP path the prometheus client needs to scrape to get the metrics";
+            }
+            leaf admin-state {
+                type srl-comm:admin-state;
+                default "disable";
+                srl-ext:show-importance high;
+                description "Administrative state of the exporter";
+            }
+            leaf oper-state {
+                type srl-comm:oper-state;
+                config false;
+                srl-ext:show-importance high;
+                description "Operational state of the exporter";
+            }
+            list metric {
+                description "Predefined metrics to be exposed on the prometheus exporter server";
+                key "name";
+                leaf name {
+                    type enumeration {
+                        enum aaa;
+                        enum acl;
+                        enum bgp;
+                        enum interfaces;
+                        enum isis;
+                        enum lldp;
+                        enum mpls;
+                        enum network-instance-bridge-table;
+                        enum network-instance-icmp;
+                        enum network-instance-icmp6;
+                        enum platform;
+                        enum route-table-ipv4-unicast;
+                        enum route-table-ipv6-unicast;  
+                        enum subinterfaces;
+                        enum tcp;              
+                        enum udp;
+                    }
+                }
+                leaf state {
+                    type srl-comm:admin-state;
+                    default "disable";
+                    srl-ext:show-importance high;
+                    description "Specifies whether this metric is collected on prometheus client scrapes or not";
+                }
+            } // list metric
+            list custom-metric {
+                description "User defined prometheus metric";
+                key "name";
+                leaf name {
+                    type string;
+                    description "Custom metric name";
+                }
+                leaf-list paths {
+                    max-elements 16;
+                    type string;
+                    description "gNMI xpaths used to subscribe for updates exposed by this custom metric";
+                }
+                leaf state {
+                    type srl-comm:admin-state;
+                    default "disable";
+                    srl-ext:show-importance high;
+                    description "Specifies whether this metric is collected on prometheus client scrapes or not";
+                }
+            } // list custom-metric
+            leaf scrapes-count {
+                config false;
+                type srl-comm:zero-based-counter64;
+                description "Number of scrapes received by the prometheus server";
+            }
+        } // container prometheus-exporter
+    } // grouping prometheus-exporter-top
+
+    augment "/srl-system:system" {
+        uses prometheus-exporter-top;
+    }
+}

@@ -1,0 +1,15 @@
+prometheus-exporter:
+    run-as-user: root
+    path: /opt/srlinux/usr/bin/
+    launch-command: ./prometheus-exporter
+    search-command: ./prometheus-exporter
+    wait-for-config: Yes
+    failure-threshold: 10
+    yang-modules:
+        names: 
+            - "prometheus-exporter"
+        source-directories:
+            - "/opt/prometheus-exporter/yang/"
+            - "/opt/srlinux/models/srl_nokia/models/common"
+            - "/opt/srlinux/models/srl_nokia/models/network-instance"
+            - "/opt/srlinux/models/srl_nokia/models/system"
