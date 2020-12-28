@@ -61,7 +61,7 @@ func (s *server) Describe(ch chan<- *prometheus.Desc) {}
 
 // Collect implements prometheus.Collector
 func (s *server) Collect(ch chan<- prometheus.Metric) {
-	
+
 	atomic.AddUint64(&s.config.baseConfig.ScrapesCount.Value, 1)
 	statsCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -82,15 +82,15 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	defer s.config.m.Unlock()
 
 	// get metrics that are enabled
-	metrics := make([]string, 0, len(s.config.metrics)+len(s.config.customMetric))
-	for name := range s.config.metrics {
-		if s.config.metrics[name].Metric.State == stateEnable {
-			metrics = append(metrics, name)
+	metrics := make(map[string]*metricConfig)
+	for name, m := range s.config.metrics {
+		if m.Metric.State == stateEnable {
+			metrics[name] = m
 		}
 	}
-	for name := range s.config.customMetric {
-		if s.config.customMetric[name].CustomMetric.State == stateEnable {
-			metrics = append(metrics, name)
+	for name, m := range s.config.customMetric {
+		if m.Metric.State == stateEnable {
+			metrics[name] = m
 		}
 	}
 	log.Debugf("about to collect metrics: %v", metrics)
@@ -98,8 +98,8 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	defer cancel2()
 	wg := new(sync.WaitGroup)
 	wg.Add(len(metrics))
-	for _, name := range metrics {
-		go func(name string) {
+	for name, m := range metrics {
+		go func(name string, m *metricConfig) {
 			defer wg.Done()
 			log.Debugf("collecting metric '%s'", name)
 			req, err := s.createSubscribeRequest(name)
@@ -146,8 +146,9 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 							if err != nil {
 								continue
 							}
+							log.Printf("metric: %s : %+v", name, m.Metric)
 							ch <- prometheus.MustNewConstMetric(
-								prometheus.NewDesc(s.metricName(vname), defaultMetricHelp, labels, nil),
+								prometheus.NewDesc(s.metricName(vname), m.Metric.HelpText.Value, labels, nil),
 								prometheus.UntypedValue,
 								v,
 								values...)
@@ -155,7 +156,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 					}
 				}
 			}
-		}(name)
+		}(name, m)
 	}
 	wg.Wait()
 }
@@ -258,8 +259,8 @@ func (s *server) createSubscribeRequest(metricName string) (*gnmi.SubscribeReque
 		paths = make([]string, 0, len(knownMetrics[metricName]))
 		paths = append(paths, knownMetrics[metricName]...)
 	} else if _, ok := s.config.customMetric[metricName]; ok {
-		paths = make([]string, 0, len(s.config.customMetric[metricName].CustomMetric.Paths))
-		for _, value := range s.config.customMetric[metricName].CustomMetric.Paths {
+		paths = make([]string, 0, len(s.config.customMetric[metricName].Metric.Paths))
+		for _, value := range s.config.customMetric[metricName].Metric.Paths {
 			paths = append(paths, value.Value)
 		}
 	} else {

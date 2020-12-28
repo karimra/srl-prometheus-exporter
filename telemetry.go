@@ -43,7 +43,7 @@ func (s *server) deleteTelemetry(ctx context.Context, jsPath string) error {
 		log.Errorf("telemetry request Marshal failed: %+v", err)
 	}
 	fmt.Printf("%s\n", string(b))
-	
+
 	r1, err := s.agent.TelemetryService.Client.TelemetryDelete(ctx, telReq)
 	if err != nil {
 		log.Errorf("could not delete telemetry for key : %s", jsPath)
@@ -79,7 +79,7 @@ func (s *server) deleteMetricTelemetry(ctx context.Context, name string) {
 }
 
 // custom metrics
-func (s *server) updateCustomMetricTelemetry(ctx context.Context, name string, cfg *customMetric) {
+func (s *server) updateCustomMetricTelemetry(ctx context.Context, name string, cfg *metricConfig) {
 	jsData, err := json.Marshal(cfg)
 	if err != nil {
 		log.Errorf("failed to marshal json data: %v", err)

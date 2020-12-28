@@ -31,6 +31,13 @@ const (
 	customMetricPath = ".system.prometheus_exporter.custom_metric"
 )
 
+type stringValue struct {
+	Value string `json:"value,omitempty"`
+}
+
+type uint64Value struct {
+	Value uint64 `json:"value,omitempty"`
+}
 type config struct {
 	baseConfig *baseConfig
 
@@ -38,7 +45,7 @@ type config struct {
 	trx          []*ndk.ConfigNotification
 	nwInst       map[string]*ndk.NetworkInstanceData
 	metrics      map[string]*metricConfig
-	customMetric map[string]*customMetric
+	customMetric map[string]*metricConfig
 }
 
 func newconfig() *config {
@@ -57,43 +64,26 @@ func newconfig() *config {
 		m:            new(sync.Mutex),
 		nwInst:       make(map[string]*ndk.NetworkInstanceData),
 		metrics:      kmetrics,
-		customMetric: make(map[string]*customMetric),
+		customMetric: make(map[string]*metricConfig),
 	}
 }
 
 type baseConfig struct {
-	AdminState      string `json:"admin_state,omitempty"`
-	OperState       string `json:"oper_state,omitempty"`
-	NetworkInstance struct {
-		Value string `json:"value,omitempty"`
-	} `json:"network_instance,omitempty"`
-	Address struct {
-		Value string `json:"value,omitempty"`
-	} `json:"address,omitempty"`
-	Port struct {
-		Value string `json:"value,omitempty"`
-	} `json:"port,omitempty"`
-	HttpPath struct {
-		Value string `json:"value,omitempty"`
-	} `json:"http_path,omitempty"`
-	ScrapesCount struct {
-		Value uint64 `json:"value,omitempty"`
-	} `json:"scrapes_count,omitempty"`
+	AdminState      string      `json:"admin_state,omitempty"`
+	OperState       string      `json:"oper_state,omitempty"`
+	NetworkInstance stringValue `json:"network_instance,omitempty"`
+	Address         stringValue `json:"address,omitempty"`
+	Port            stringValue `json:"port,omitempty"`
+	HttpPath        stringValue `json:"http_path,omitempty"`
+	ScrapesCount    uint64Value `json:"scrapes_count,omitempty"`
 }
 
 type metricConfig struct {
 	Metric struct {
-		State string `json:"state,omitempty"`
+		State    string        `json:"state,omitempty"`
+		HelpText stringValue   `json:"help_text,omitempty"`
+		Paths    []stringValue `json:"paths,omitempty"`
 	} `json:"metric,omitempty"`
-}
-
-type customMetric struct {
-	CustomMetric struct {
-		Paths []struct {
-			Value string `json:"value,omitempty"`
-		} `json:"paths,omitempty"`
-		State string `json:"state,omitempty"`
-	} `json:"custom_metric,omitempty"`
 }
 
 func (s *server) configHandler(ctx context.Context) {
@@ -239,7 +229,7 @@ func (s *server) handleCfgPrometheusChange(ctx context.Context, cfg *ndk.ConfigN
 	if newCfg.AdminState == adminDisable && s.config.baseConfig.OperState != operDown {
 		// shutdown the http server with a 1s timeout
 		s.shutdown(ctx, time.Second)
-	} else if (newCfg.AdminState == adminEnable && s.config.baseConfig.OperState == operDown)  {
+	} else if newCfg.AdminState == adminEnable && s.config.baseConfig.OperState == operDown {
 		// start http server
 		go s.start(ctx)
 	}
@@ -262,7 +252,14 @@ func (s *server) handleCfgMetricCreate(ctx context.Context, cfg *ndk.ConfigNotif
 	if _, ok := s.config.metrics[key]; !ok {
 		s.config.metrics[key] = new(metricConfig)
 	}
-
+	log.Printf("looking for known metrics with key : %s", key)
+	if knownMetricPaths, ok := knownMetrics[key]; ok {
+		log.Printf("found known metric paths: %+v", knownMetricPaths)
+		newMetricConfig.Metric.Paths = make([]stringValue, len(knownMetricPaths))
+		for i, p := range knownMetricPaths {
+			newMetricConfig.Metric.Paths[i].Value = p
+		}
+	}
 	// store new config
 	s.config.metrics[key] = newMetricConfig
 	// update metric telemetry
@@ -301,7 +298,7 @@ func (s *server) handleCfgMetricDelete(ctx context.Context, cfg *ndk.ConfigNotif
 
 func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk.ConfigNotification) {
 	key := cfg.Key.Keys[0]
-	newMetricConfig := new(customMetric)
+	newMetricConfig := new(metricConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newMetricConfig)
 	if err != nil {
 		log.Infof("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
@@ -312,7 +309,7 @@ func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 	if _, ok := s.config.customMetric[key]; !ok {
-		s.config.customMetric[key] = new(customMetric)
+		s.config.customMetric[key] = new(metricConfig)
 	}
 
 	// store new config

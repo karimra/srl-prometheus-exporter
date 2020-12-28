@@ -20,12 +20,12 @@ var knownMetrics = map[string][]string{
 		"/platform/linecard/forwarding-complex/buffer-memory",
 	},
 	"acl": {
-		"/acl/policers/system-cpu-policer[name=*]/statistics",
-		"/acl/policers/policer[name=*]/statistics",
-		"/acl/ipv4-filter[name=*]/entry[sequence-id=*]/statistics",
-		"/acl/ipv6-filter[name=*]/entry[sequence-id=*]/statistics",
-		"/acl/cpm-filter/ipv4-filter/entry[sequence-id=*]/statistics",
-		"/acl/cpm-filter/ipv6-filter/entry[sequence-id=*]/statistics",
+		"/acl/policers/system-cpu-policer/statistics",
+		"/acl/policers/policer/statistics",
+		"/acl/ipv4-filter/entry/statistics",
+		"/acl/ipv6-filter/entry/statistics",
+		"/acl/cpm-filter/ipv4-filter/entry/statistics",
+		"/acl/cpm-filter/ipv6-filter/entry/statistics",
 	},
 	"aaa": {
 		"/system/aaa/server-group/server/statistics",

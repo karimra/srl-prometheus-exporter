@@ -111,6 +111,18 @@ module prometheus-exporter {
                     srl-ext:show-importance high;
                     description "Specifies whether this metric is collected on prometheus client scrapes or not";
                 }
+                leaf-list paths {
+                    config false;
+                    max-elements 16;
+                    type string;
+                    srl-ext:show-importance high;
+                    description "gNMI xpaths used to subscribe for updates exposed by this metric";
+                }
+                leaf help-text {
+                    type string;
+                    default "SRLinux generated metric";
+                    description "Prometheus metric help text";
+                }
             } // list metric
             list custom-metric {
                 description "User defined prometheus metric";
@@ -129,6 +141,11 @@ module prometheus-exporter {
                     default "disable";
                     srl-ext:show-importance high;
                     description "Specifies whether this metric is collected on prometheus client scrapes or not";
+                }
+                leaf help-text {
+                    type string;
+                    default "SRLinux generated metric";
+                    description "Prometheus metric help text";
                 }
             } // list custom-metric
             leaf scrapes-count {
