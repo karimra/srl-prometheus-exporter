@@ -153,6 +153,73 @@ module prometheus-exporter {
                 type srl-comm:zero-based-counter64;
                 description "Number of scrapes received by the prometheus server";
             }
+            container consul {
+                leaf address {
+                    type srl-comm:ip-address;
+                    srl-ext:show-importance high;
+                    description "IP Address of the Consul server to register on";
+                }
+                leaf port {
+                    type srl-comm:port-number;
+                    default "8500";
+                    srl-ext:show-importance high;
+                    description "Port number of the Consul server to register on";
+                }
+                leaf admin-state {
+                    type srl-comm:admin-state;
+                    default "disable";
+                    srl-ext:show-importance high;
+                    description "Administrative state of the Consul registration";
+                }
+                leaf oper-state {
+                    type srl-comm:oper-state;
+                    config false;
+                    srl-ext:show-importance high;
+                    description "Operational state of the Consul registration";
+                }
+                leaf datacenter {
+                    type string;
+                    description "Consul datacenter";
+                }
+                leaf username {
+                    type string;
+                    description "Consul username";
+                }
+                leaf password {
+                    type string;
+                    description "Consul username";
+                }
+                leaf token {
+                    type string;
+                    description "Consul Token";
+                }
+                leaf check-interval {
+                    type string;
+                    default "5s";
+                    description "Consul service check interval";
+                }
+                leaf max-fail {
+                    type int32;
+                    default 3;
+                    description "Maximum number of failed checks before the service is deleted by Consul";
+                }
+                leaf service-name {
+                    type string;
+                    description "Consul service name, defaults to the router hostname appended with `-prometheus`";
+                }
+                leaf-list tags {
+                    type string;
+                    description "list of tags to be added to the service registration";
+                }
+                leaf enable-http-check {
+                    type boolean;
+                    description "Enable Consul HTTP check";
+                }
+                leaf http-check-address {
+                    type string;
+                    description "HTTP address Consul uses for its check, defaults to the exporter address, port and http-path";
+                } 
+            } // container consul
         } // container prometheus-exporter
     } // grouping prometheus-exporter-top
 

@@ -7,11 +7,9 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"google.golang.org/protobuf/encoding/prototext"
-
 	ndk "github.com/karimra/go-srl-ndk"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 const (
