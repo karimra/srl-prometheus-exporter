@@ -1,0 +1,50 @@
+project_name: srl-prometheus-exporter
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+    goarch:
+      - amd64
+archives:
+  - replacements:
+      linux: Linux
+      amd64: x86_64
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+nfpms:
+  - id: srl-prometheus-exporter
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      amd64: x86_64
+      linux: Linux
+    vendor: Nokia
+    homepage: https://github.com/karimra/srl-prometheus-exporter
+    maintainer: Karim Radhouani <karim.radhouani@nokia.com>
+    description: A Prometheus exporter for Nokia SR Linux
+    formats:
+      - rpm
+    license: "BSD 2"
+    contents:
+      - src: ./builds/srl-prometheus-exporter
+        dst: /opt/srlinux/usr/bin/srl-prometheus-exporter
+      - src: ./builds/srl-prometheus-exporter
+        dst: /opt/srlinux/usr/bin/prometheus-exporter
+      - src: ./yang/prometheus-exporter.yang
+        dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
+      - src: ./yml/prometheus-exporter.yml
+        dst: /etc/opt/srlinux/appmgr/prometheus-exporter.yml
+    overrides:
+      rpm:
+        scripts:
