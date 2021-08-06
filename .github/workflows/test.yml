@@ -18,7 +18,7 @@ jobs:
       - name: Configure git for private modules
         env:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          run: git config --global url."https://karimra:${TOKEN}@github.com".insteadOf "https://github.com"
+        run: git config --global url."https://karimra:${TOKEN}@github.com".insteadOf "https://github.com"
       - run: go test -cover ./...
         env:
           CGO_ENABLED: 0
