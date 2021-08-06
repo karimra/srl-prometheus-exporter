@@ -7,11 +7,9 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
-	"google.golang.org/protobuf/encoding/prototext"
-
 	ndk "github.com/karimra/go-srl-ndk"
+	log "github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 const (
@@ -46,9 +44,22 @@ type config struct {
 	nwInst       map[string]*ndk.NetworkInstanceData
 	metrics      map[string]*metricConfig
 	customMetric map[string]*metricConfig
+	// from file
+	username string
+	password string
 }
 
-func newconfig() *config {
+func newconfig(fc fileConfig) *config {
+	if len(fc.Metrics) > 0 {
+		knownMetrics = fc.Metrics
+	}
+	if fc.Username == "" {
+		fc.Username = "admin"
+	}
+	if fc.Password == "" {
+		fc.Password = "admin"
+	}
+
 	kmetrics := make(map[string]*metricConfig)
 	for n := range knownMetrics {
 		kmetrics[n] = &metricConfig{}
@@ -65,6 +76,8 @@ func newconfig() *config {
 		nwInst:       make(map[string]*ndk.NetworkInstanceData),
 		metrics:      kmetrics,
 		customMetric: make(map[string]*metricConfig),
+		username:     fc.Username,
+		password:     fc.Password,
 	}
 }
 
@@ -150,7 +163,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			}
 		case metricPath:
 			if len(cfg.Key.Keys) == 0 {
-				log.Infof("'%s' no keys in cfg notification: %+v", metricPath, cfg)
+				log.Infof("%q no keys in cfg notification: %+v", metricPath, cfg)
 				return
 			}
 			switch cfg.Op {
@@ -163,7 +176,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			}
 		case customMetricPath:
 			if len(cfg.Key.Keys) == 0 {
-				log.Infof("'%s' no keys in cfg notification: %+v", customMetricPath, cfg)
+				log.Infof("%q no keys in cfg notification: %+v", customMetricPath, cfg)
 				return
 			}
 			switch cfg.Op {
@@ -185,7 +198,7 @@ func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigN
 	newCfg := new(baseConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
-		log.Infof("failed to marshal config data from path '%s': %v", cfg.GetKey().GetJsPath(), err)
+		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
 	log.Infof("read base config data: %+v", newCfg)
@@ -213,7 +226,7 @@ func (s *server) handleCfgPrometheusChange(ctx context.Context, cfg *ndk.ConfigN
 	newCfg := new(baseConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
-		log.Infof("failed to marshal config data from path '%s': %v", cfg.GetKey().GetJsPath(), err)
+		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
 	log.Infof("read base config data: %+v", newCfg)
@@ -288,7 +301,7 @@ func (s *server) handleCfgMetricDelete(ctx context.Context, cfg *ndk.ConfigNotif
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 	if _, ok := s.config.metrics[key]; !ok {
-		log.Errorf("Op delete metric, cannot find metric '%s'", key)
+		log.Errorf("Op delete metric, cannot find metric %q", key)
 		return
 	}
 	s.config.metrics[key] = &metricConfig{}
@@ -323,7 +336,7 @@ func (s *server) handleCfgCustomMetricDelete(ctx context.Context, cfg *ndk.Confi
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 	if _, ok := s.config.customMetric[key]; !ok {
-		log.Errorf("Op delete custom metric, cannot find custom metric '%s'", key)
+		log.Errorf("Op delete custom metric, cannot find custom metric %q", key)
 		return
 	}
 	delete(s.config.customMetric, key)

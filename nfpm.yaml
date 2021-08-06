@@ -14,12 +14,15 @@ description: |
   "SRL Prometheus exporter"
 vendor: "Nokia"
 license: "BSD 2"
-bindir: "/opt/srlinux/usr/bin/"
-files:
-  ./builds/srl-prometheus-exporter: "/opt/srlinux/usr/bin/prometheus-exporter"
-  ./yang/prometheus-exporter.yang: "/opt/prometheus-exporter/yang/prometheus-exporter.yang"
-  ./yml/prometheus-exporter.yml: "/etc/opt/srlinux/appmgr/prometheus-exporter.yml"
-config_files:
+contents:
+  - src: ./builds/srl-prometheus-exporter
+    dst: /opt/srlinux/usr/bin/srl-prometheus-exporter
+  - src: ./builds/srl-prometheus-exporter
+    dst: /opt/srlinux/usr/bin/prometheus-exporter
+  - src: ./yang/prometheus-exporter.yang
+    dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
+  - src: ./yml/prometheus-exporter.yml
+    dst: /etc/opt/srlinux/appmgr/prometheus-exporter.yml
 overrides:
   rpm:
     scripts:

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/karimra/srl-ndk-demo/agent"
@@ -10,28 +12,56 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	retryInterval        = 2 * time.Second
-	agentName            = "prometheus-exporter"
-	defaultMetricHelp    = "SRLinux generated metric"
-	gnmiServerUnixSocket = "unix:///opt/srlinux/var/run/sr_gnmi_server"
+	retryInterval         = 2 * time.Second
+	agentName             = "prometheus-exporter"
+	defaultMetricHelp     = "SRLinux generated metric"
+	gnmiServerUnixSocket  = "unix:///opt/srlinux/var/run/sr_gnmi_server"
+	defaultConfigFileName = "./metrics.yaml"
 )
 
+type fileConfig struct {
+	Metrics  map[string][]string `yaml:"metrics,omitempty"`
+	Username string              `yaml:"username,omitempty"`
+	Password string              `yaml:"password,omitempty"`
+}
+
 func main() {
+	cfgFile := flag.String("c", defaultConfigFileName, "configuration file")
 	debug := flag.Bool("d", false, "turn on debug")
+
 	flag.Parse()
 
 	log.SetFormatter(&log.TextFormatter{
 		DisableColors: true,
 		FullTimestamp: true,
 	})
-	log.SetReportCaller(true)
 
 	log.SetLevel(log.InfoLevel)
 	if *debug {
 		log.SetLevel(log.DebugLevel)
+		log.SetReportCaller(true)
+	}
+
+READFILE:
+	var fc fileConfig
+	_, err := os.Stat(*cfgFile)
+	if err == nil {
+		b, err := ioutil.ReadFile(*cfgFile)
+		if err != nil {
+			log.Errorf("failed to read the configuration file: %v", err)
+			time.Sleep(retryInterval)
+			goto READFILE
+		}
+		err = yaml.Unmarshal(b, &fc)
+		if err != nil {
+			log.Errorf("failed to unmarshal the configuration file: %v", err)
+			time.Sleep(retryInterval)
+			goto READFILE
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,13 +70,14 @@ func main() {
 CRAGENT:
 	app, err := agent.NewAgent(ctx, agentName)
 	if err != nil {
-		log.Errorf("failed to create agent '%s': %v", agentName, err)
+		log.Errorf("failed to create agent %q: %v", agentName, err)
 		log.Infof("retrying in %s", retryInterval)
 		time.Sleep(retryInterval)
 		goto CRAGENT
 	}
-	cfg := newconfig()
-	log.Infof("starting with default cfg: %+v", cfg)
+
+	cfg := newconfig(fc)
+	log.Infof("starting with default configuration: %+v", cfg)
 	exporter := newServer(WithAgent(app), WithConfig(cfg))
 
 	log.Infof("starting config handler...")
