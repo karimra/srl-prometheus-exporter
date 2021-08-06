@@ -29,7 +29,7 @@ func (s *server) updateTelemetry(ctx context.Context, jsPath string, jsData stri
 		log.Errorf("Could not update telemetry key=%s: err=%v", jsPath, err)
 		return
 	}
-	log.Debugf("Telemetry add/update status: %s, error_string: '%s'", r1.GetStatus().String(), r1.GetErrorStr())
+	log.Debugf("Telemetry add/update status: %s, error_string: %q", r1.GetStatus().String(), r1.GetErrorStr())
 }
 
 func (s *server) deleteTelemetry(ctx context.Context, jsPath string) error {
@@ -49,7 +49,7 @@ func (s *server) deleteTelemetry(ctx context.Context, jsPath string) error {
 		log.Errorf("could not delete telemetry for key : %s", jsPath)
 		return err
 	}
-	log.Debugf("telemetry delete status: %s, error_string: '%s'", r1.GetStatus().String(), r1.GetErrorStr())
+	log.Debugf("telemetry delete status: %s, error_string: %q", r1.GetStatus().String(), r1.GetErrorStr())
 	return nil
 }
 

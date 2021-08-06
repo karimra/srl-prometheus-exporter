@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -17,16 +18,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-	"google.golang.org/grpc/metadata"
-
 	"github.com/google/gnxi/utils/xpath"
 	"github.com/karimra/gnmic/collector"
 	"github.com/karimra/srl-ndk-demo/agent"
 	"github.com/openconfig/gnmi/proto/gnmi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netns"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -73,7 +73,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 
 	gnmiClient, err := createGNMIClient(gctx)
 	if err != nil {
-		log.Infof("failed to create a gnmi connection to '%s': %v", gnmiServerUnixSocket, err)
+		log.Infof("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
 		return
 	}
 
@@ -101,32 +101,33 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	for name, m := range metrics {
 		go func(name string, m *metricConfig) {
 			defer wg.Done()
-			log.Debugf("collecting metric '%s'", name)
+			log.Debugf("collecting metric %q", name)
 			req, err := s.createSubscribeRequest(name)
 			if err != nil {
 				return
 			}
+			ctx = metadata.AppendToOutgoingContext(ctx, "username", s.config.username, "password", s.config.password)
 			sctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			subClient, err := gnmiClient.Subscribe(sctx)
 			if err != nil {
-				log.Errorf("failed to create a subscribe client for metric '%s': %v", name, err)
+				log.Errorf("failed to create a subscribe client for metric %q: %v", name, err)
 				return
 			}
 			log.Debugf("sending subscribe request: %+v", req)
 			err = subClient.Send(req)
 			if err != nil {
-				log.Errorf("failed to send a subscribe request for metric '%s': %v", name, err)
+				log.Errorf("failed to send a subscribe request for metric %q: %v", name, err)
 				return
 			}
 			for {
 				subResp, err := subClient.Recv()
 				if err == io.EOF {
-					log.Infof("subscription for metric '%s' received EOF, subscription done", name)
+					log.Infof("subscription for metric %q received EOF, subscription done", name)
 					return
 				}
 				if err != nil {
-					log.Errorf("failed to receive a subscribe request for metric '%s': %v", name, err)
+					log.Errorf("failed to receive a subscribe request for metric %q: %v", name, err)
 					return
 				}
 				select {
@@ -146,9 +147,9 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 							if err != nil {
 								continue
 							}
-							log.Printf("metric: %s : %+v", name, m.Metric)
+							//log.Printf("metric: %s : %+v", name, m.Metric)
 							ch <- prometheus.MustNewConstMetric(
-								prometheus.NewDesc(s.metricName(vname), m.Metric.HelpText.Value, labels, nil),
+								prometheus.NewDesc(s.metricName(name, vname), m.Metric.HelpText.Value, labels, nil),
 								prometheus.UntypedValue,
 								v,
 								values...)
@@ -183,7 +184,7 @@ START:
 		registry := prometheus.NewRegistry()
 		err := registry.Register(s)
 		if err != nil {
-			log.Errorf("failed to add exporter to prometheus registery: %v", err)
+			log.Errorf("failed to add exporter to prometheus registry: %v", err)
 			time.Sleep(retryInterval)
 			goto START
 		}
@@ -213,10 +214,10 @@ START:
 			log.Errorf("unknown network instance name: %s", s.config.baseConfig.NetworkInstance.Value)
 			return
 		}
-		log.Debugf("using network-instance '%s'", netInstName)
+		log.Debugf("using network-instance %q", netInstName)
 		n, err := netns.GetFromName(netInstName)
 		if err != nil {
-			log.Errorf("failed getting NS '%s': %v", netInstName, err)
+			log.Errorf("failed getting NS %q: %v", netInstName, err)
 			time.Sleep(retryInterval)
 			goto START
 		}
@@ -268,13 +269,13 @@ func (s *server) createSubscribeRequest(metricName string) (*gnmi.SubscribeReque
 	}
 	numPaths := len(paths)
 	if numPaths == 0 {
-		return nil, fmt.Errorf("no paths found under metric '%s'", metricName)
+		return nil, fmt.Errorf("no paths found under metric %q", metricName)
 	}
 	subscriptions := make([]*gnmi.Subscription, numPaths)
 	for i, p := range paths {
 		gnmiPath, err := xpath.ToGNMIPath(p)
 		if err != nil {
-			return nil, fmt.Errorf("metric '%s', path '%s' parse error: %v", metricName, p, err)
+			return nil, fmt.Errorf("metric %q, path %q parse error: %v", metricName, p, err)
 		}
 		subscriptions[i] = &gnmi.Subscription{Path: gnmiPath}
 	}
@@ -342,8 +343,9 @@ func getFloat(v interface{}) (float64, error) {
 	}
 }
 
-func (s *server) metricName(valueName string) string {
-	// more customisations ?
+func (s *server) metricName(name, valueName string) string {
+	// more customizations ?
+	valueName = fmt.Sprintf("%s_%s", name, path.Base(valueName))
 	return strings.TrimLeft(s.metricRegex.ReplaceAllString(valueName, "_"), "_")
 }
 
@@ -354,7 +356,7 @@ func (s *server) shutdown(ctx context.Context, timeout time.Duration) {
 	if s.srv != nil {
 		err := s.srv.Shutdown(cctx)
 		if err != nil {
-			log.Errorf("failed to shutdwon prometheus server: %v", err)
+			log.Errorf("failed to shutdown prometheus server: %v", err)
 		} else {
 			log.Infof("prometheus server shutdown...")
 		}

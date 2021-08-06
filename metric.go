@@ -5,14 +5,13 @@ var knownMetrics = map[string][]string{
 		"/interface/statistics",
 		"/interface/ethernet/statistics/",
 		"/interface/queue-statistics",
-		"/interface/lag/members/statistics/",
 	},
 	"subinterfaces": {
 		"/interface/subinterface/statistics",
 	},
 	"lldp": {
 		"/system/lldp/interface/statistics",
-	}, // interface is enough, no need for /system/lldp/statistics
+	},
 	"platform": {
 		"/platform/control/disk/statistics",
 		"/platform/control/cpu/software-interrupt",
