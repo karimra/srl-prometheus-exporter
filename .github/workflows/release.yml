@@ -25,7 +25,10 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
-
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: git config --global url."https://karimra:${TOKEN}@github.com".insteadOf "https://github.com"
       - name: Release with goreleaser
         uses: goreleaser/goreleaser-action@v1
         with:
