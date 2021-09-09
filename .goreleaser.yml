@@ -37,10 +37,8 @@ nfpms:
       - rpm
     license: "BSD 2"
     contents:
-      - src: ./builds/srl-prometheus-exporter
+      - src: srl-prometheus-exporter
         dst: /opt/srlinux/usr/bin/srl-prometheus-exporter
-      - src: ./builds/srl-prometheus-exporter
-        dst: /opt/srlinux/usr/bin/prometheus-exporter
       - src: ./yang/prometheus-exporter.yang
         dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
       - src: ./yml/prometheus-exporter.yml
