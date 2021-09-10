@@ -36,9 +36,8 @@ nfpms:
     formats:
       - rpm
     license: "BSD 2"
+    bindir: /opt/srlinux/usr/bin/
     contents:
-      - src: srl-prometheus-exporter
-        dst: /opt/srlinux/usr/bin/srl-prometheus-exporter
       - src: ./yang/prometheus-exporter.yang
         dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
       - src: ./yml/prometheus-exporter.yml
