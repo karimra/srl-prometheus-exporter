@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -29,12 +30,18 @@ type fileConfig struct {
 	Password string              `yaml:"password,omitempty"`
 }
 
+var version = "dev"
+
 func main() {
 	cfgFile := flag.String("c", defaultConfigFileName, "configuration file")
 	debug := flag.Bool("d", false, "turn on debug")
-
+	versionFlag := flag.Bool("v", false, "print version")
 	flag.Parse()
 
+	if *versionFlag {
+		fmt.Println(version)
+		return
+	}
 	if *debug {
 		log.SetLevel(log.DebugLevel)
 		log.SetReportCaller(true)
@@ -61,7 +68,7 @@ READFILE:
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = metadata.AppendToOutgoingContext(ctx, "agent_name", agentName)
-	
+
 CRAGENT:
 	app, err := agent.NewAgent(ctx, agentName)
 	if err != nil {

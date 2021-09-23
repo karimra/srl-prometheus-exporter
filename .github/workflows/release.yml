@@ -29,8 +29,6 @@ jobs:
         env:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: git config --global url."https://karimra:${TOKEN}@github.com".insteadOf "https://github.com"
-      - name: Add Agent version
-        run: sed -i 's/GIT_TAG/$(git describe)/g' ./yml/prometheus-exporter.yml
       - name: Release with goreleaser
         uses: goreleaser/goreleaser-action@v1
         with:
