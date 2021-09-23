@@ -3,7 +3,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X github.com/karimra/srl-prometheus-exporter/main.version={{.Version}}-{{.ShortCommit}}
+      - -s -w -X main.version={{.Version}}-{{.ShortCommit}}
     goos:
       - linux
     goarch:
