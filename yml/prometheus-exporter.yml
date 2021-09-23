@@ -1,8 +1,9 @@
 prometheus-exporter:
     run-as-user: root
     path: /opt/srlinux/usr/bin/
-    launch-command: ./prometheus-exporter
-    search-command: ./prometheus-exporter
+    launch-command: ./srl-prometheus-exporter
+    search-command: ./srl-prometheus-exporter
+    version-command: echo "GIT_TAG"
     wait-for-config: Yes
     failure-threshold: 10
     yang-modules:
