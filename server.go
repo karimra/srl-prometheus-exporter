@@ -676,11 +676,11 @@ START:
 				if strings.HasPrefix(path, "interface") {
 					if strings.Contains(path, "/ipv4/address/status") {
 						ip := getPathKeyVal(u.GetPath(), "address", "ip-prefix")
-						sysInfo.IPAddrV4 = strings.Split(ip, "/")[0]
+						sysInfo.IPAddrV4 = ip[:len(ip)-3]
 					}
 					if strings.Contains(path, "/ipv6/address/status") {
 						ip := getPathKeyVal(u.GetPath(), "address", "ip-prefix")
-						sysInfo.IPAddrV6 = strings.Split(ip, "/")[0]
+						sysInfo.IPAddrV6 = ip[:len(ip)-3]
 					}
 				}
 				if strings.Contains(path, "system/name") {
