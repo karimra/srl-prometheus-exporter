@@ -3,7 +3,7 @@ prometheus-exporter:
     path: /opt/srlinux/usr/bin/
     launch-command: ./srl-prometheus-exporter
     search-command: ./srl-prometheus-exporter
-    version-command: ./srl-prometheus-exporter -v
+    version-command: /opt/srlinux/usr/bin/srl-prometheus-exporter -v
     wait-for-config: Yes
     failure-threshold: 10
     yang-modules:
