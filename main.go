@@ -35,12 +35,6 @@ func main() {
 
 	flag.Parse()
 
-	log.SetFormatter(&log.TextFormatter{
-		DisableColors: true,
-		FullTimestamp: true,
-	})
-
-	log.SetLevel(log.InfoLevel)
 	if *debug {
 		log.SetLevel(log.DebugLevel)
 		log.SetReportCaller(true)
@@ -67,6 +61,7 @@ READFILE:
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = metadata.AppendToOutgoingContext(ctx, "agent_name", agentName)
+	
 CRAGENT:
 	app, err := agent.NewAgent(ctx, agentName)
 	if err != nil {
