@@ -3,7 +3,7 @@ package main
 var knownMetrics = map[string][]string{
 	"interfaces": {
 		"/interface/statistics",
-		"/interface/ethernet/statistics/",
+		"/interface/ethernet/statistics",
 		"/interface/queue-statistics",
 	},
 	"subinterfaces": {

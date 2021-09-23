@@ -153,6 +153,55 @@ module prometheus-exporter {
                 type srl-comm:zero-based-counter64;
                 description "Number of scrapes received by the prometheus server";
             }
+            container registration {
+                leaf address {
+                    type string;
+                    srl-ext:show-importance high;
+                    description "Consul server address";
+                }
+                leaf username {
+                    type string;
+                    srl-ext:show-importance high;
+                    description "Consul server username";
+                }
+                leaf password {
+                    type string;
+                    srl-ext:show-importance high;
+                    description "Consul server username";
+                }
+                leaf token {
+                    type string;
+                    srl-ext:show-importance high;
+                    description "Consul server access token";
+                }
+                leaf ttl {
+                    type string;
+                    default "5s";
+                    srl-ext:show-importance high;
+                    description "Registration TTL";
+                }
+                leaf http-check {
+                    type boolean;
+                    default false;
+                    description "Enable Consul HTTP Check";
+                }
+                leaf-list tags {
+                    type string;
+                    description "List of tags to be added to the service registration";
+                }
+                leaf admin-state {
+                    type srl-comm:admin-state;
+                    default "disable";
+                    srl-ext:show-importance high;
+                    description "Administrative state of the registration";
+                }
+                leaf oper-state {
+                    type srl-comm:oper-state;
+                    config false;
+                    srl-ext:show-importance high;
+                    description "Operational state of the registration";
+                }
+            } // container registration
         } // container prometheus-exporter
     } // grouping prometheus-exporter-top
 

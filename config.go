@@ -36,6 +36,11 @@ type stringValue struct {
 type uint64Value struct {
 	Value uint64 `json:"value,omitempty"`
 }
+
+type boolValue struct {
+	Value bool `json:"value,omitempty"`
+}
+
 type config struct {
 	baseConfig *baseConfig
 
@@ -44,6 +49,7 @@ type config struct {
 	nwInst       map[string]*ndk.NetworkInstanceData
 	metrics      map[string]*metricConfig
 	customMetric map[string]*metricConfig
+
 	// from file
 	username string
 	password string
@@ -82,13 +88,14 @@ func newconfig(fc fileConfig) *config {
 }
 
 type baseConfig struct {
-	AdminState      string      `json:"admin_state,omitempty"`
-	OperState       string      `json:"oper_state,omitempty"`
-	NetworkInstance stringValue `json:"network_instance,omitempty"`
-	Address         stringValue `json:"address,omitempty"`
-	Port            stringValue `json:"port,omitempty"`
-	HttpPath        stringValue `json:"http_path,omitempty"`
-	ScrapesCount    uint64Value `json:"scrapes_count,omitempty"`
+	AdminState      string        `json:"admin_state,omitempty"`
+	OperState       string        `json:"oper_state,omitempty"`
+	NetworkInstance stringValue   `json:"network_instance,omitempty"`
+	Address         stringValue   `json:"address,omitempty"`
+	Port            stringValue   `json:"port,omitempty"`
+	HttpPath        stringValue   `json:"http_path,omitempty"`
+	ScrapesCount    uint64Value   `json:"scrapes_count,omitempty"`
+	Registration    *registration `json:"registration,omitempty"`
 }
 
 type metricConfig struct {
@@ -97,6 +104,18 @@ type metricConfig struct {
 		HelpText stringValue   `json:"help_text,omitempty"`
 		Paths    []stringValue `json:"paths,omitempty"`
 	} `json:"metric,omitempty"`
+}
+
+type registration struct {
+	Address    stringValue   `json:"address,omitempty"`
+	Username   stringValue   `json:"username,omitempty"`
+	Password   stringValue   `json:"password,omitempty"`
+	Token      stringValue   `json:"token,omitempty"`
+	TTL        stringValue   `json:"ttl,omitempty"`
+	HTTPCheck  boolValue     `json:"http-check,omitempty"`
+	Tags       []stringValue `json:"tags,omitempty"`
+	AdminState string        `json:"admin_state,omitempty"`
+	OperState  string        `json:"oper_state,omitempty"`
 }
 
 func (s *server) configHandler(ctx context.Context) {
@@ -127,7 +146,6 @@ func (s *server) configHandler(ctx context.Context) {
 				continue
 			}
 			fmt.Printf("%s\n", string(b))
-
 			for _, ev := range event.GetNotification() {
 				if cfg := ev.GetConfig(); cfg != nil {
 					s.handleConfigEvent(ctx, cfg)
@@ -143,50 +161,56 @@ func (s *server) configHandler(ctx context.Context) {
 
 func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotification) {
 	log.Infof("handling cfg: %+v", cfg)
+	fmt.Printf("PATH: %s\n", cfg.GetKey().GetJsPath())
+	fmt.Printf("KEYS: %v\n", cfg.GetKey().GetKeys())
+	fmt.Printf("JSON:\n%s\n", cfg.GetData().GetJson())
 
+	jsPath := cfg.GetKey().GetJsPath()
 	// collect non commit.end config notifications
-	if cfg.Key.JsPath != ".commit.end" {
+	if jsPath != ".commit.end" {
 		s.config.trx = append(s.config.trx, cfg)
 		return
 	}
-	// when paths is "".commit.end", handle the stored config notifications
-	for _, cfg := range s.config.trx {
-		switch cfg.Key.JsPath {
+	// when paths is ".commit.end", handle the stored config notifications
+	for _, txCfg := range s.config.trx {
+		switch txCfg.GetKey().GetJsPath() {
 		case exporterPath:
-			switch cfg.Op {
+			switch txCfg.Op {
 			case ndk.SdkMgrOperation_Create:
-				s.handleCfgPrometheusCreate(ctx, cfg)
+				s.handleCfgPrometheusCreate(ctx, txCfg)
 			case ndk.SdkMgrOperation_Change:
-				s.handleCfgPrometheusChange(ctx, cfg)
+				s.handleCfgPrometheusChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Delete:
-				log.Infof("received delete Operation for path '.prometheus_exporter', this is unexpected...")
+				log.Errorf("received delete Operation for path %q, this is unexpected...", exporterPath)
 			}
 		case metricPath:
-			if len(cfg.Key.Keys) == 0 {
-				log.Infof("%q no keys in cfg notification: %+v", metricPath, cfg)
+			if len(txCfg.GetKey().GetKeys()) == 0 {
+				log.Errorf("%q no keys in cfg notification: %+v", metricPath, txCfg)
 				return
 			}
-			switch cfg.Op {
+			switch txCfg.Op {
 			case ndk.SdkMgrOperation_Create:
-				s.handleCfgMetricCreate(ctx, cfg)
+				s.handleCfgMetricCreate(ctx, txCfg)
 			case ndk.SdkMgrOperation_Change:
-				s.handleCfgMetricChange(ctx, cfg)
+				s.handleCfgMetricChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Delete:
-				s.handleCfgMetricDelete(ctx, cfg)
+				s.handleCfgMetricDelete(ctx, txCfg)
 			}
 		case customMetricPath:
-			if len(cfg.Key.Keys) == 0 {
-				log.Infof("%q no keys in cfg notification: %+v", customMetricPath, cfg)
+			if len(txCfg.Key.Keys) == 0 {
+				log.Infof("%q no keys in cfg notification: %+v", customMetricPath, txCfg)
 				return
 			}
-			switch cfg.Op {
+			switch txCfg.Op {
 			case ndk.SdkMgrOperation_Change:
-				s.handleCfgCustomMetricCreateChange(ctx, cfg)
+				s.handleCfgCustomMetricCreateChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Create:
-				s.handleCfgCustomMetricCreateChange(ctx, cfg)
+				s.handleCfgCustomMetricCreateChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Delete:
-				s.handleCfgCustomMetricDelete(ctx, cfg)
+				s.handleCfgCustomMetricDelete(ctx, txCfg)
 			}
+		default:
+			log.Errorf("unexpected config path %q", txCfg.GetKey().GetJsPath())
 		}
 	}
 	s.config.m.Lock()
@@ -195,13 +219,23 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 }
 
 func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigNotification) {
-	newCfg := new(baseConfig)
+	newCfg := &baseConfig{
+		Registration: &registration{
+			AdminState: adminDisable,
+			OperState:  operDown,
+		},
+	}
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
 		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
-	log.Infof("read base config data: %+v", newCfg)
+	b, err := json.MarshalIndent(newCfg, "", "  ")
+	if err != nil {
+		log.Errorf("failed to Marshal baseconfig: %v", err)
+	} else {
+		log.Infof("read baseconfig data: %s", string(b))
+	}
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
@@ -214,40 +248,68 @@ func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigN
 	// start server if admin-state == enable
 	if newCfg.AdminState == adminEnable && s.config.baseConfig.OperState != operStarting {
 		newCfg.OperState = operStarting
-		s.updatePrometheusBaseTelemetry(ctx, newCfg)
 		go s.start(ctx)
-		return
 	}
 	// update internal telemetry status
 	s.updatePrometheusBaseTelemetry(ctx, newCfg)
 }
 
 func (s *server) handleCfgPrometheusChange(ctx context.Context, cfg *ndk.ConfigNotification) {
-	newCfg := new(baseConfig)
+	newCfg := &baseConfig{
+		Registration: new(registration),
+	}
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
 		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
-	log.Infof("read base config data: %+v", newCfg)
+	b, err := json.MarshalIndent(newCfg, "", "  ")
+	if err != nil {
+		log.Errorf("failed to Marshal baseconfig: %v", err)
+	} else {
+		log.Infof("read baseconfig data: %s", string(b))
+	}
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 
-	// save current oper state
-	newCfg.OperState = s.config.baseConfig.OperState
-	// store new config
-	s.config.baseConfig = newCfg
-	log.Infof("new stored config: %+v", s.config.baseConfig)
+	// // save current oper state
+	// newCfg.OperState = s.config.baseConfig.OperState
+	// newCfg.Registration.OperState = s.config.baseConfig.Registration.OperState
+	// // store new config
+	// s.config.baseConfig = newCfg
+	// log.Infof("new stored config: %+v", s.config.baseConfig)
+
 	if newCfg.AdminState == adminDisable && s.config.baseConfig.OperState != operDown {
 		// shutdown the http server with a 1s timeout
 		s.shutdown(ctx, time.Second)
-	} else if newCfg.AdminState == adminEnable && s.config.baseConfig.OperState == operDown {
+		return
+	}
+	if newCfg.AdminState == adminEnable && s.config.baseConfig.OperState == operDown {
 		// start http server
 		go s.start(ctx)
+		return
 	}
+	// HTTP server already running, check if registration has to be started or stopped
+	if s.config.baseConfig.OperState == operUp && s.config.baseConfig.AdminState == adminEnable {
+		log.Debug("server is up, checking if registration needs to be started...")
+		// server is already up, check if registration needs to be started
+		if newCfg.Registration.AdminState == adminEnable && s.config.baseConfig.Registration.OperState == operDown {
+			go s.registerService(ctx)
+		} else if newCfg.Registration.AdminState == adminDisable && s.config.baseConfig.OperState != operUp {
+			if s.regCancelFn != nil {
+				s.regCancelFn()
+			}
+		}
+	}
+
+	// save current oper state
+	newCfg.OperState = s.config.baseConfig.OperState
+	newCfg.Registration.OperState = s.config.baseConfig.Registration.OperState
+	// store new config
+	s.config.baseConfig = newCfg
 	// update internal telemetry status
-	s.updatePrometheusBaseTelemetry(ctx, newCfg)
+	s.updatePrometheusBaseTelemetry(ctx, s.config.baseConfig)
 }
 
 func (s *server) handleCfgMetricCreate(ctx context.Context, cfg *ndk.ConfigNotification) {
