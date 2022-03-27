@@ -86,12 +86,12 @@ CRAGENT:
 	exporter.configHandler(ctx)
 }
 
-func createGNMIClient(ctx context.Context) (gnmi.GNMIClient, error) {
+func createGNMIClient(ctx context.Context) (*grpc.ClientConn, gnmi.GNMIClient, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, retryInterval)
 	defer cancel()
 	conn, err := grpc.DialContext(timeoutCtx, gnmiServerUnixSocket, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return gnmi.NewGNMIClient(conn), nil
+	return conn, gnmi.NewGNMIClient(conn), nil
 }

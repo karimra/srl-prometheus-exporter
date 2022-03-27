@@ -134,11 +134,12 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	gctx, gcancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer gcancel()
 
-	gnmiClient, err := createGNMIClient(gctx)
+	conn, gnmiClient, err := createGNMIClient(gctx)
 	if err != nil {
 		log.Infof("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
 		return
 	}
+	defer conn.Close()
 
 	// lock config
 	s.config.m.Lock()
@@ -182,6 +183,8 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 				log.Errorf("failed to create a subscribe client for metric %q: %v", name, err)
 				return
 			}
+			defer subClient.CloseSend()
+
 			log.Debugf("sending subscribe request: %+v", req)
 			err = subClient.Send(req)
 			if err != nil {
@@ -219,7 +222,6 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 							values...)
 					}
 				}
-
 			}
 		}(name, m)
 	}
@@ -556,7 +558,7 @@ INITCONSUL:
 		fmt.Sprintf("chassis-mac-address=%s", systemInfo.ChassisMacAddress),
 		fmt.Sprintf("chassis-part-number=%s", systemInfo.ChassisPartNumber),
 		fmt.Sprintf("chassis-serial-number=%s", systemInfo.ChassisSerialNumber),
-		fmt.Sprintf("chassis-clei-coder=%s", systemInfo.ChassisCLEICode),
+		fmt.Sprintf("chassis-clei-code=%s", systemInfo.ChassisCLEICode),
 	)
 
 	service := &capi.AgentServiceRegistration{
@@ -650,12 +652,13 @@ START:
 	case <-sctx.Done():
 		return nil, ctx.Err()
 	default:
-		gnmiClient, err := createGNMIClient(sctx)
+		conn, gnmiClient, err := createGNMIClient(sctx)
 		if err != nil {
 			log.Infof("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
 			time.Sleep(retryInterval)
 			goto START
 		}
+		defer conn.Close()
 
 		rsp, err := gnmiClient.Get(sctx,
 			&gnmi.GetRequest{
