@@ -79,7 +79,7 @@ func (s *server) deleteMetricTelemetry(ctx context.Context, name string) {
 }
 
 // custom metrics
-func (s *server) updateCustomMetricTelemetry(ctx context.Context, name string, cfg *metricConfig) {
+func (s *server) updateCustomMetricTelemetry(ctx context.Context, name string, cfg *customMetricConfig) {
 	jsData, err := json.Marshal(cfg)
 	if err != nil {
 		log.Errorf("failed to marshal json data: %v", err)

@@ -48,7 +48,7 @@ type config struct {
 	trx          []*ndk.ConfigNotification
 	nwInst       map[string]*ndk.NetworkInstanceData
 	metrics      map[string]*metricConfig
-	customMetric map[string]*metricConfig
+	customMetric map[string]*customMetricConfig
 
 	// from file
 	username string
@@ -81,7 +81,7 @@ func newconfig(fc fileConfig) *config {
 		m:            new(sync.Mutex),
 		nwInst:       make(map[string]*ndk.NetworkInstanceData),
 		metrics:      kmetrics,
-		customMetric: make(map[string]*metricConfig),
+		customMetric: make(map[string]*customMetricConfig),
 		username:     fc.Username,
 		password:     fc.Password,
 	}
@@ -99,11 +99,17 @@ type baseConfig struct {
 }
 
 type metricConfig struct {
-	Metric struct {
-		State    string        `json:"state,omitempty"`
-		HelpText stringValue   `json:"help_text,omitempty"`
-		Paths    []stringValue `json:"paths,omitempty"`
-	} `json:"metric,omitempty"`
+	Metric metric `json:"metric,omitempty"`
+}
+
+type customMetricConfig struct {
+	Metric metric `json:"custom_metric,omitempty"`
+}
+
+type metric struct {
+	State    string        `json:"state,omitempty"`
+	HelpText stringValue   `json:"help_text,omitempty"`
+	Paths    []stringValue `json:"paths,omitempty"`
 }
 
 type registration struct {
@@ -373,7 +379,7 @@ func (s *server) handleCfgMetricDelete(ctx context.Context, cfg *ndk.ConfigNotif
 
 func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk.ConfigNotification) {
 	key := cfg.Key.Keys[0]
-	newMetricConfig := new(metricConfig)
+	newMetricConfig := new(customMetricConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newMetricConfig)
 	if err != nil {
 		log.Infof("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
@@ -384,7 +390,7 @@ func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 	if _, ok := s.config.customMetric[key]; !ok {
-		s.config.customMetric[key] = new(metricConfig)
+		s.config.customMetric[key] = new(customMetricConfig)
 	}
 
 	// store new config

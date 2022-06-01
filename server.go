@@ -146,15 +146,15 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	defer s.config.m.Unlock()
 
 	// get metrics that are enabled
-	metrics := make(map[string]*metricConfig, len(s.config.metrics)+len(s.config.customMetric))
+	metrics := make(map[string]metric, len(s.config.metrics)+len(s.config.customMetric))
 	for name, m := range s.config.metrics {
 		if m.Metric.State == stateEnable {
-			metrics[name] = m
+			metrics[name] = m.Metric
 		}
 	}
 	for name, m := range s.config.customMetric {
 		if m.Metric.State == stateEnable {
-			metrics[name] = m
+			metrics[name] = m.Metric
 		}
 	}
 
@@ -168,7 +168,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	wg := new(sync.WaitGroup)
 	wg.Add(len(metrics))
 	for name, m := range metrics {
-		go func(name string, m *metricConfig) {
+		go func(name string, m metric) {
 			defer wg.Done()
 			log.Debugf("collecting metric %q", name)
 			req, err := s.createSubscribeRequest(name)
@@ -216,7 +216,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 							continue
 						}
 						ch <- prometheus.MustNewConstMetric(
-							prometheus.NewDesc(s.metricName(name, vname), m.Metric.HelpText.Value, labels, nil),
+							prometheus.NewDesc(s.metricName(name, vname), m.HelpText.Value, labels, nil),
 							prometheus.UntypedValue,
 							v,
 							values...)
