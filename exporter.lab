@@ -1,0 +1,40 @@
+name: exporterlab
+
+topology:
+  kinds:
+    srl:
+      # Need IXR D2 or D3 for EVPN/VXLAN support
+      type: ixrd2 # See https://www.nokia.com/networks/products/7250-interconnect-router/
+      image: srl/prometheus-exporter:latest
+      extras:
+        srl-agents: [ yml/prometheus-exporter.yml ]
+    linux:
+      # image: ghcr.io/hellt/network-multitool
+      image: frr-with-lldp:latest
+
+  nodes:
+
+  ###### DC FABRIC ######
+
+    leaf1:  { kind: srl, group: leaves, mgmt_ipv4: 172.20.20.6 }
+
+### CLIENTS ###
+    client1:
+      kind: linux
+      group: hosts
+      mgmt_ipv4: 172.20.20.31 # Pick a fixed IP
+      mgmt_ipv6: 2001:172:20:20::31
+
+###### TELEMETRY STACK ######
+
+    prometheus:
+      kind: linux
+      image: prom/prometheus:v2.38.0
+      binds:
+        - prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      cmd: --config.file=/etc/prometheus/prometheus.yml
+      ports:
+        - 9090:9090
+
+  links:
+    - endpoints: ["leaf1:e1-1", "client1:eth1"]  # Linux
