@@ -16,7 +16,7 @@ topology:
 
   ###### DC FABRIC ######
 
-    leaf1:  { kind: srl, group: leaves, mgmt_ipv4: 172.20.20.6 }
+    leaf1:  { kind: srl, group: leaves, mgmt_ipv4: 172.20.20.6, startup-config: leaf1.delta.conf }
 
 ### CLIENTS ###
     client1:
