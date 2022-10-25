@@ -13,4 +13,5 @@ prometheus-exporter:
             - "/opt/prometheus-exporter/yang/"
             - "/opt/srlinux/models/srl_nokia/models/common"
             - "/opt/srlinux/models/srl_nokia/models/network-instance"
+            - "/opt/srlinux/models/srl_nokia/models/interfaces"
             - "/opt/srlinux/models/srl_nokia/models/system"

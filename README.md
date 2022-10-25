@@ -98,3 +98,9 @@ A:srl1# info
         ]
     }
 ```
+
+### Get stats from lab
+ACL is ipv4-only
+```
+wget -4 http://clab-exporterlab-leaf1:8888/metrics -O-
+```
