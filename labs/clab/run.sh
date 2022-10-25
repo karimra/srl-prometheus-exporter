@@ -35,6 +35,7 @@ sudo clab exec $clab_exec_args "sr_cli tools system app-management application a
 # check the app status in both SRLs
 sudo clab exec $clab_exec_args "sr_cli show system application prometheus-exporter | as json"
 
+sleep 10
 # check the app config, it should be admin down and oper down
 gnmic $gnmic_args -e json_ietf \
                 get \

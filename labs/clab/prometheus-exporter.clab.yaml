@@ -7,7 +7,7 @@ mgmt:
 topology:
   kinds:
     srl:
-      image: ghcr.io/nokia/srlinux:21.11.2
+      image: ghcr.io/nokia/srlinux:latest
       binds:
         - ./app:/tmp/rpm:ro
 
