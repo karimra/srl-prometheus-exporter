@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+
 	"os"
 	"time"
 
@@ -51,7 +51,7 @@ READFILE:
 	var fc fileConfig
 	_, err := os.Stat(*cfgFile)
 	if err == nil {
-		b, err := ioutil.ReadFile(*cfgFile)
+		b, err := os.ReadFile(*cfgFile)
 		if err != nil {
 			log.Errorf("failed to read the configuration file: %v", err)
 			time.Sleep(retryInterval)

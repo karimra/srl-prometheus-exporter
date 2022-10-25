@@ -11,18 +11,17 @@ updates:
 {{- end }}
 
 {{- range $interface := $vars.interfaces }}
-{{- $prefix := $interface.ip_range }}
-  {{- range $idx := seq 0 $interface.num_subinterfaces }}
-- path: "/interface[name={{ $interface.name }}]/subinterface[index={{ $idx }}]"
+- path: "/interface[name={{ $interface.name }}]"
   encoding: "json_ietf"
   value:
-    admin-state: enable
-    vlan:
-      encap:
-        single-tagged:
-          vlan-id: {{ add $idx 1 }}
-    ipv4:
-      address:
-        - ip-prefix: {{ $interface.ip_base }}.{{ conv.ToInt (div $idx 256) }}.{{ math.Rem $idx 256}}.{{ $target.ip_lsb}}/30
+    subinterface:
+  {{- range $idx := seq 0 $interface.num_subinterfaces }}
+      - index: {{ $idx }}
+        admin-state: enable
+        type: bridged
+        vlan:
+          encap:
+            single-tagged:
+              vlan-id: {{ add $idx 1 }}
   {{- end }}
 {{- end }}
