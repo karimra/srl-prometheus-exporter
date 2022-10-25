@@ -1,0 +1,31 @@
+updates:
+
+- path: /system/gnmi-server/unix-socket
+  encoding: json_ietf
+  value:
+    admin-state: enable
+    use-authentication: true
+
+- path: /acl/cpm-filter/ipv4-filter/entry[sequence-id=281]
+  encoding: json_ietf
+  value:
+    action:
+      accept: {}
+    match:
+      protocol: tcp
+      destination-port:
+        range:
+          start: 8000
+          end: 9999
+
+- path: /acl/cpm-filter/ipv4-filter/entry[sequence-id=282]
+  encoding: json_ietf
+  value:
+    action:
+      accept: {}
+    match:
+      protocol: tcp
+      source-port:
+        range:
+          start: 8000
+          end: 9999

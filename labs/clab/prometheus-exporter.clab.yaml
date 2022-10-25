@@ -1,0 +1,60 @@
+name: prom-exporter
+
+mgmt:
+  network: prom-exp-mgmt                
+  ipv4_subnet: 172.80.80.0/24      
+
+topology:
+  kinds:
+    srl:
+      image: ghcr.io/nokia/srlinux:21.11.2
+      binds:
+        - ./app:/tmp/rpm:ro
+
+  nodes:
+    srl1:
+      kind: srl
+      ports:
+        - 8888:8888
+    
+    srl2:
+      kind: srl
+      ports:
+        - 8889:8888
+
+    prometheus:
+      kind: linux
+      image: prom/prometheus:latest
+      user: 65534:65534 
+      ports:
+        - 9090:9090
+      binds:
+        - ./prometheus/:/etc/prometheus/
+        #- ./prometheus/storage:/prometheus
+      cmd: |
+        --config.file=/etc/prometheus/prometheus.yaml 
+        # --storage.tsdb.path=/prometheus 
+        --web.console.libraries=/usr/share/prometheus/console_libraries 
+        --web.console.templates=/usr/share/prometheus/consoles 
+        --log.level=debug
+
+    consul-agent:
+      kind: linux
+      image: consul:latest
+      ports:
+        - 8500:8500
+        - 8600:8600/udp
+      cmd: 'agent -server -ui -bind=127.0.0.1 -node=server-1 -bootstrap-expect=1 -client=0.0.0.0 -log-level debug'
+
+    grafana:
+      kind: linux
+      image: grafana/grafana:latest
+      binds:
+        - grafana/datasources/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+        #- grafana/dashboards/:/var/lib/grafana/dashboards
+      ports:
+        - 3000:3000
+
+  links:
+    - endpoints: ["srl1:e1-1", "srl2:e1-1"]
+    - endpoints: ["srl1:e1-2", "srl2:e1-2"]
