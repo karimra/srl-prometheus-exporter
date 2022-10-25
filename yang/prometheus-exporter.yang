@@ -25,12 +25,15 @@ module prometheus-exporter {
     description
         "This module defines configuration and operational state data related to the SRLinux Prometheus Exporter.";
 
-    // revision
+    // revision(s)
     revision "2020-10-15" {
         description
           "prometheus-exporter 0.1.0";
     }
-    
+    revision "2020-09-22" {
+        description
+          "prometheus-exporter 0.2.0";
+    }
     grouping prometheus-exporter-top {
         container prometheus-exporter {
             //presence "prometheus-exporter";

@@ -93,6 +93,7 @@ type server struct {
 	consulClient *capi.Client
 	metricRegex  *regexp.Regexp
 }
+
 type serverOption func(*server)
 
 func WithAgent(agt *agent.Agent) func(s *server) {

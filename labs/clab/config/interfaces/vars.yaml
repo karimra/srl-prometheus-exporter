@@ -1,0 +1,12 @@
+clab-prom-exporter-srl1:
+  ip_lsb: 1
+clab-prom-exporter-srl2:
+  ip_lsb: 2
+
+interfaces:
+  - name: ethernet-1/1
+    num_subinterfaces: 500
+    ip_base: 10
+  - name: ethernet-1/2
+    num_subinterfaces: 500
+    ip_base: 11

@@ -1,3 +1,4 @@
-*.sh
 builds
 dist
+labs/clab/clab-*
+labs/clab/app
