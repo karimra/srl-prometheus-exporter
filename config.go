@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	ndk "github.com/karimra/go-srl-ndk"
+	"github.com/nokia/srlinux-ndk-go/ndk"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -184,7 +184,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			switch txCfg.Op {
 			case ndk.SdkMgrOperation_Create:
 				s.handleCfgPrometheusCreate(ctx, txCfg)
-			case ndk.SdkMgrOperation_Change:
+			case ndk.SdkMgrOperation_Update:
 				s.handleCfgPrometheusChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Delete:
 				log.Errorf("received delete Operation for path %q, this is unexpected...", exporterPath)
@@ -197,7 +197,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			switch txCfg.Op {
 			case ndk.SdkMgrOperation_Create:
 				s.handleCfgMetricCreate(ctx, txCfg)
-			case ndk.SdkMgrOperation_Change:
+			case ndk.SdkMgrOperation_Update:
 				s.handleCfgMetricChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Delete:
 				s.handleCfgMetricDelete(ctx, txCfg)
@@ -208,7 +208,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 				return
 			}
 			switch txCfg.Op {
-			case ndk.SdkMgrOperation_Change:
+			case ndk.SdkMgrOperation_Update:
 				s.handleCfgCustomMetricCreateChange(ctx, txCfg)
 			case ndk.SdkMgrOperation_Create:
 				s.handleCfgCustomMetricCreateChange(ctx, txCfg)
@@ -426,7 +426,7 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 				go s.start(ctx)
 			}
 		}
-	case ndk.SdkMgrOperation_Change:
+	case ndk.SdkMgrOperation_Update:
 		s.config.nwInst[key.InstName] = nwInst.Data
 		if s.config.baseConfig.NetworkInstance.Value == nwInst.Key.InstName {
 			if !nwInst.Data.OperIsUp {

@@ -5,6 +5,7 @@ prometheus-exporter:
     search-command: ./srl-prometheus-exporter
     version-command: /opt/srlinux/usr/bin/srl-prometheus-exporter -v
     wait-for-config: Yes
+    config-delivery-format: proto-json # json, proto-json, binary-tlvs
     failure-threshold: 10
     yang-modules:
         names: 

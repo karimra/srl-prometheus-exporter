@@ -1,20 +1,22 @@
 #!/bin/bash
 
 version=0.2.4
+username=admin
+password=NokiaSrl1!
 
 # download the app installation RPM
 rm -rf app
 mkdir -p app && cd app
 curl -sSLO https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/srl-prometheus-exporter_${version}_Linux_x86_64.rpm
 cd .. 
- 
+
 #deploy the lab
 sudo clab dep -c
 
 # build comma separated srl nodes names
 nodes=$(docker ps -f label=clab-node-kind=srl -f label=containerlab=prom-exporter --format {{.Names}} | paste -s -d, -)
 
-gnmic_args="-u admin -p admin -a $nodes --skip-verify"
+gnmic_args="-u $username -p $password -a $nodes --skip-verify"
 # configure app prerequisites, gNMI UDS and ACLs
 gnmic $gnmic_args set --request-file config/app/config.yaml
 

@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	ndk "github.com/karimra/go-srl-ndk"
+	"github.com/nokia/srlinux-ndk-go/ndk"
 )
 
 func (s *server) updateTelemetry(ctx context.Context, jsPath string, jsData string) {
@@ -24,7 +24,7 @@ func (s *server) updateTelemetry(ctx context.Context, jsPath string, jsData stri
 		log.Errorf("telemetry request Marshal failed: %+v", err)
 	}
 	fmt.Printf("%s\n", string(b))
-	r1, err := s.agent.TelemetryService.Client.TelemetryAddOrUpdate(ctx, telReq)
+	r1, err := s.agent.TelemetryServiceClient.TelemetryAddOrUpdate(ctx, telReq)
 	if err != nil {
 		log.Errorf("Could not update telemetry key=%s: err=%v", jsPath, err)
 		return
@@ -44,7 +44,7 @@ func (s *server) deleteTelemetry(ctx context.Context, jsPath string) error {
 	}
 	fmt.Printf("%s\n", string(b))
 
-	r1, err := s.agent.TelemetryService.Client.TelemetryDelete(ctx, telReq)
+	r1, err := s.agent.TelemetryServiceClient.TelemetryDelete(ctx, telReq)
 	if err != nil {
 		log.Errorf("could not delete telemetry for key : %s", jsPath)
 		return err
