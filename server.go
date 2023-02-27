@@ -19,12 +19,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/gnxi/utils/xpath"
 	capi "github.com/hashicorp/consul/api"
-	"github.com/karimra/gnmic/formatters"
-	"github.com/karimra/gnmic/utils"
-	"github.com/karimra/srl-ndk-demo/agent"
+	agent "github.com/karimra/srl-ndk-demo"
 	"github.com/openconfig/gnmi/proto/gnmi"
+	"github.com/openconfig/gnmic/formatters"
+	"github.com/openconfig/gnmic/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -349,7 +348,7 @@ func (s *server) createSubscribeRequest(metricName string) (*gnmi.SubscribeReque
 	}
 	subscriptions := make([]*gnmi.Subscription, numPaths)
 	for i, p := range paths {
-		gnmiPath, err := xpath.ToGNMIPath(p)
+		gnmiPath, err := utils.ParsePath(p)
 		if err != nil {
 			return nil, fmt.Errorf("metric %q, path %q parse error: %v", metricName, p, err)
 		}
