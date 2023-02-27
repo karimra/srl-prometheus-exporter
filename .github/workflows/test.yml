@@ -7,14 +7,18 @@ on:
       - "master"
       - "!releases/**"
 
+env:
+  GOVER: 1.19.2
+  GORELEASER_VER: v0.180.3
+
 jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          go-version: 1.19
+          go-version: ${{ env.GOVER }}
       - name: Configure git for private modules
         env:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
