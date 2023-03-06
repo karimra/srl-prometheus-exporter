@@ -739,8 +739,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRW
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/nokia/srlinux-ndk-go v0.1.1-rc1 h1:CdsVZIScQC9mCjjTYVfUjE8ujeMYHj/1bsAN8VSbC58=
-github.com/nokia/srlinux-ndk-go v0.1.1-rc1/go.mod h1:dNlAHszfKYnLd2+svTkHQkCwd5VZx8xEv5iifZHFZrQ=
+github.com/nokia/srlinux-ndk-go v0.1.1 h1:OTmY+SnetJbipRnSMJKuWaEC/K06urf6Os3YlhcqugA=
+github.com/nokia/srlinux-ndk-go v0.1.1/go.mod h1:dNlAHszfKYnLd2+svTkHQkCwd5VZx8xEv5iifZHFZrQ=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
@@ -914,7 +914,6 @@ go4.org/intern v0.0.0-20211027215823-ae77deb06f29/go.mod h1:cS2ma+47FKrLPdXFpr7C
 go4.org/intern v0.0.0-20220617035311-6925f38cc365 h1:t9hFvR102YlOqU0fQn1wgwhNvSbHGBbbJxX9JKfU3l0=
 go4.org/intern v0.0.0-20220617035311-6925f38cc365/go.mod h1:WXRv3p7T6gzt0CcJm43AAKdKVZmcQbwwC7EwquU5BZU=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37/go.mod h1:FftLjUGFEDu5k8lt0ddY+HcrH/qU/0qk+H8j9/nTl3E=
-go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 h1:FyBZqvoA/jbNzuAWLQE2kG820zMAkcilx6BMjGbL/E4=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760/go.mod h1:FftLjUGFEDu5k8lt0ddY+HcrH/qU/0qk+H8j9/nTl3E=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296 h1:QJ/xcIANMLApehfgPCHnfK1hZiaMmbaTVmPv7DAoTbo=
 go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296/go.mod h1:FftLjUGFEDu5k8lt0ddY+HcrH/qU/0qk+H8j9/nTl3E=
