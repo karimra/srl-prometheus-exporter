@@ -16,9 +16,7 @@ vendor: "Nokia"
 license: "BSD 2"
 contents:
   - src: ./builds/srl-prometheus-exporter
-    dst: /opt/srlinux/usr/bin/srl-prometheus-exporter
-  - src: ./builds/srl-prometheus-exporter
-    dst: /opt/srlinux/usr/bin/prometheus-exporter
+    dst: /usr/bin/srl-prometheus-exporter
   - src: ./yang/prometheus-exporter.yang
     dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
   - src: ./yml/prometheus-exporter.yml
