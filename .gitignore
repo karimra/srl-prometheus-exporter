@@ -1,4 +1,5 @@
 builds
 dist
-labs/clab/clab-*
-labs/clab/app
+labs/*/clab-*
+labs/*/app
+labs/*/.*
