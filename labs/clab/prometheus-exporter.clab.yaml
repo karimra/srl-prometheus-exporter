@@ -2,7 +2,7 @@ name: prom-exporter
 
 mgmt:
   network: prom-exp-mgmt                
-  ipv4_subnet: 172.80.80.0/24      
+  ipv4-subnet: 172.80.80.0/24      
 
 topology:
   kinds:
