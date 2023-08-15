@@ -8,8 +8,7 @@ on:
       - "!releases/**"
 
 env:
-  GOVER: 1.19.2
-  GORELEASER_VER: v0.180.3
+  GOVER: 1.19.5
 
 jobs:
   test:

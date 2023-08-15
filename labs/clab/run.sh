@@ -2,7 +2,7 @@
 
 ./stop.sh
 
-version=0.2.7
+version=0.2.8
 username=admin
 password=NokiaSrl1!
 
