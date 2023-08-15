@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -28,12 +28,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netns"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
 const (
-	metricNameRegex = "[^a-zA-Z0-9_]+"
-	serviceName     = "srl-prometheus-exporter"
+	metricNameRegex      = "[^a-zA-Z0-9_]+"
+	serviceName          = "srl-prometheus-exporter"
+	retryInterval        = 2 * time.Second
+	gnmiServerUnixSocket = "unix:///opt/srlinux/var/run/sr_gnmi_server"
 )
 
 var sysInfoPaths = []*gnmi.Path{
@@ -128,7 +132,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	atomic.AddUint64(&s.config.baseConfig.ScrapesCount.Value, 1)
 	statsCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	statsCtx = metadata.AppendToOutgoingContext(statsCtx, "agent_name", agentName)
+	statsCtx = metadata.AppendToOutgoingContext(statsCtx, "agent_name", s.config.agentName)
 	s.updatePrometheusBaseTelemetry(statsCtx, s.config.baseConfig)
 
 	gctx, gcancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -136,7 +140,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 
 	conn, gnmiClient, err := createGNMIClient(gctx)
 	if err != nil {
-		log.Infof("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
+		log.Errorf("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
 		return
 	}
 	defer conn.Close()
@@ -163,7 +167,12 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	defer cancel()
 
 	// add credentials to context
-	ctx = metadata.AppendToOutgoingContext(ctx, "username", s.config.username, "password", s.config.password)
+	if s.config.username != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "username", s.config.username)
+	}
+	if s.config.password != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "password", s.config.password)
+	}
 
 	wg := new(sync.WaitGroup)
 	wg.Add(len(metrics))
@@ -194,7 +203,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 			for {
 				subResp, err := subClient.Recv()
 				if err == io.EOF {
-					log.Infof("subscription for metric %q received EOF, subscription done", name)
+					log.Debugf("subscription for metric %q received EOF, subscription done", name)
 					return
 				}
 				if err != nil {
@@ -228,7 +237,7 @@ func (s *server) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func newServer(opts ...serverOption) *server {
+func NewServer(opts ...serverOption) *server {
 	s := &server{
 		metricRegex: regexp.MustCompile(metricNameRegex),
 	}
@@ -236,6 +245,7 @@ func newServer(opts ...serverOption) *server {
 	for _, opt := range opts {
 		opt(s)
 	}
+
 	return s
 }
 
@@ -297,7 +307,7 @@ START:
 		defer runtime.UnlockOSThread()
 		err = netns.Set(n)
 		if err != nil {
-			log.Infof("failed setting NS to %s: %v", n, err)
+			log.Errorf("failed setting NS to %s: %v", n, err)
 			time.Sleep(retryInterval)
 			goto START
 		}
@@ -305,7 +315,7 @@ START:
 		// create tcp listener
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Infof("failed to create tcp listener: %v", err)
+			log.Errorf("failed to create tcp listener: %v", err)
 			time.Sleep(retryInterval)
 			goto START
 		}
@@ -318,11 +328,11 @@ START:
 		go func() {
 			err = s.srv.Serve(listener)
 			if err != nil && err != http.ErrServerClosed {
-				log.Infof("prometheus server error: %v", err)
+				log.Errorf("prometheus server error: %v", err)
 				s.config.baseConfig.OperState = operDown
 				go s.updatePrometheusBaseTelemetry(sctx, s.config.baseConfig)
 			}
-			log.Print("http server closed...")
+			log.Infof("http server closed...")
 		}()
 		go s.registerService(sctx)
 	}
@@ -644,7 +654,12 @@ INITCONSUL:
 }
 
 func (s *server) getSystemInfo(ctx context.Context) (*systemInfo, error) {
-	ctx = metadata.AppendToOutgoingContext(ctx, "username", s.config.username, "password", s.config.password)
+	if s.config.username != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "username", s.config.username)
+	}
+	if s.config.password != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "password", s.config.password)
+	}
 	sctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 START:
@@ -654,7 +669,7 @@ START:
 	default:
 		conn, gnmiClient, err := createGNMIClient(sctx)
 		if err != nil {
-			log.Infof("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
+			log.Errorf("failed to create a gnmi connection to %q: %v", gnmiServerUnixSocket, err)
 			time.Sleep(retryInterval)
 			goto START
 		}
@@ -726,5 +741,23 @@ func getPathKeyVal(p *gnmi.Path, elem, key string) string {
 type healthHandler struct{}
 
 func (h *healthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "OK")
+	if r.URL.Path == "/" {
+		fmt.Fprintf(w, "OK")
+		return
+	}
+	http.NotFound(w, r)
+}
+
+func createGNMIClient(ctx context.Context) (*grpc.ClientConn, gnmi.GNMIClient, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, retryInterval)
+	defer cancel()
+	conn, err := grpc.DialContext(timeoutCtx,
+		gnmiServerUnixSocket,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, gnmi.NewGNMIClient(conn), nil
 }

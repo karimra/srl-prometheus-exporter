@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -18,12 +18,14 @@ func (s *server) updateTelemetry(ctx context.Context, jsPath string, jsData stri
 	telReq := &ndk.TelemetryUpdateRequest{
 		State: []*ndk.TelemetryInfo{info},
 	}
-	log.Debugf("Updating telemetry with: %+v", telReq)
-	b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telReq)
-	if err != nil {
-		log.Errorf("telemetry request Marshal failed: %+v", err)
+	if s.config.debug {
+		log.Debugf("Updating telemetry with: %+v", telReq)
+		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telReq)
+		if err != nil {
+			log.Errorf("telemetry request Marshal failed: %+v", err)
+		}
+		log.Debugf("%s\n", string(b))
 	}
-	fmt.Printf("%s\n", string(b))
 	r1, err := s.agent.TelemetryServiceClient.TelemetryAddOrUpdate(ctx, telReq)
 	if err != nil {
 		log.Errorf("Could not update telemetry key=%s: err=%v", jsPath, err)
@@ -37,13 +39,13 @@ func (s *server) deleteTelemetry(ctx context.Context, jsPath string) error {
 	telReq := &ndk.TelemetryDeleteRequest{}
 	telReq.Key = make([]*ndk.TelemetryKey, 0)
 	telReq.Key = append(telReq.Key, key)
-
-	b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telReq)
-	if err != nil {
-		log.Errorf("telemetry request Marshal failed: %+v", err)
+	if s.config.debug {
+		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telReq)
+		if err != nil {
+			log.Errorf("telemetry request Marshal failed: %+v", err)
+		}
+		log.Debugf("%s\n", string(b))
 	}
-	fmt.Printf("%s\n", string(b))
-
 	r1, err := s.agent.TelemetryServiceClient.TelemetryDelete(ctx, telReq)
 	if err != nil {
 		log.Errorf("could not delete telemetry for key : %s", jsPath)
@@ -74,7 +76,7 @@ func (s *server) updateMetricTelemetry(ctx context.Context, name string, cfg *me
 
 func (s *server) deleteMetricTelemetry(ctx context.Context, name string) {
 	jsPath := fmt.Sprintf("%s{.name==\"%s\"}", metricPath, name)
-	log.Infof("Deleting telemetry path %s", jsPath)
+	log.Debugf("Deleting telemetry path %s", jsPath)
 	s.deleteTelemetry(ctx, jsPath)
 }
 
@@ -90,6 +92,6 @@ func (s *server) updateCustomMetricTelemetry(ctx context.Context, name string, c
 
 func (s *server) deleteCustomMetricTelemetry(ctx context.Context, name string) {
 	jsPath := fmt.Sprintf("%s{.name==\"%s\"}", customMetricPath, name)
-	log.Infof("Deleting telemetry path %s", jsPath)
+	log.Debugf("Deleting telemetry path %s", jsPath)
 	s.deleteTelemetry(ctx, jsPath)
 }

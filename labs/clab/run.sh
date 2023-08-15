@@ -1,14 +1,28 @@
 #!/bin/bash
 
+./stop.sh
+
 version=0.2.7
 username=admin
 password=NokiaSrl1!
 
-# download the app installation RPM
+filename="srl-prometheus-exporter_${version}_Linux_x86_64.rpm"
+
 rm -rf app
-mkdir -p app && cd app
-curl -sSLO https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/srl-prometheus-exporter_${version}_Linux_x86_64.rpm
-cd .. 
+mkdir -p app
+
+if [[ $1 == "build" ]]; then
+    # build RPM
+    echo "building using goreleaser"
+    cd ../..
+    goreleaser --snapshot --clean release
+    cp dist/*.rpm labs/clab/app/
+    cd labs/clab
+else
+    # download the app installation RPM
+    echo "downloading the app RPM"
+    curl -sSL https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/${filename} -o app/${filename}
+fi
 
 #deploy the lab
 sudo clab dep -c
