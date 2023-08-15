@@ -9,9 +9,12 @@ builds:
     goarch:
       - amd64
 archives:
-  - replacements:
-      linux: Linux
-      amd64: x86_64
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
 checksum:
   name_template: "checksums.txt"
 snapshot:
@@ -25,10 +28,12 @@ changelog:
 
 nfpms:
   - id: srl-prometheus-exporter
-    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      amd64: x86_64
-      linux: Linux
+    file_name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
     vendor: Nokia
     homepage: https://github.com/karimra/srl-prometheus-exporter
     maintainer: Karim Radhouani <karim.radhouani@nokia.com>
@@ -42,6 +47,8 @@ nfpms:
         dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
       - src: ./yml/prometheus-exporter.yml
         dst: /etc/opt/srlinux/appmgr/prometheus-exporter.yml
+      - src: ./metrics.yaml
+        dst: /usr/local/bin/metrics.yaml
     overrides:
       rpm:
         scripts:

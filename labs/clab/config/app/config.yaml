@@ -4,7 +4,7 @@ updates:
   encoding: json_ietf
   value:
     admin-state: enable
-    use-authentication: true
+    use-authentication: false
 
 - path: /acl/cpm-filter/ipv4-filter/entry[sequence-id=281]
   encoding: json_ietf

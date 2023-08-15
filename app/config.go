@@ -1,9 +1,8 @@
-package main
+package app
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
@@ -42,6 +41,8 @@ type boolValue struct {
 }
 
 type config struct {
+	agentName string
+
 	baseConfig *baseConfig
 
 	m            *sync.Mutex
@@ -53,17 +54,19 @@ type config struct {
 	// from file
 	username string
 	password string
+	//
+	debug bool
 }
 
-func newconfig(fc fileConfig) *config {
+type FileConfig struct {
+	Metrics  map[string][]string `yaml:"metrics,omitempty"`
+	Username string              `yaml:"username,omitempty"`
+	Password string              `yaml:"password,omitempty"`
+}
+
+func NewConfig(fc *FileConfig, agentName string, debug bool) *config {
 	if len(fc.Metrics) > 0 {
 		knownMetrics = fc.Metrics
-	}
-	if fc.Username == "" {
-		fc.Username = "admin"
-	}
-	if fc.Password == "" {
-		fc.Password = "admin"
 	}
 
 	kmetrics := make(map[string]*metricConfig)
@@ -77,6 +80,7 @@ func newconfig(fc fileConfig) *config {
 	}
 
 	return &config{
+		agentName:    agentName,
 		baseConfig:   bcfg,
 		m:            new(sync.Mutex),
 		nwInst:       make(map[string]*ndk.NetworkInstanceData),
@@ -84,6 +88,7 @@ func newconfig(fc fileConfig) *config {
 		customMetric: make(map[string]*customMetricConfig),
 		username:     fc.Username,
 		password:     fc.Password,
+		debug:        debug,
 	}
 }
 
@@ -124,19 +129,21 @@ type registration struct {
 	OperState  string        `json:"oper_state,omitempty"`
 }
 
-func (s *server) configHandler(ctx context.Context) {
+func (s *server) ConfigHandler(ctx context.Context) {
 	cfgStream := s.agent.StartConfigNotificationStream(ctx)
 	nwInstStream := s.agent.StartNwInstNotificationStream(ctx)
 	for {
 		select {
 		case nwInstEvent := <-nwInstStream:
-			log.Debugf("NwInst notification: %+v", nwInstEvent)
-			b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(nwInstEvent)
-			if err != nil {
-				log.Errorf("NwInst notification Marshal failed: %+v", err)
-				continue
+			if s.config.debug {
+				log.Debugf("NwInst notification: %+v", nwInstEvent)
+				b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(nwInstEvent)
+				if err != nil {
+					log.Errorf("NwInst notification Marshal failed: %+v", err)
+					continue
+				}
+				log.Debugf("%s\n", string(b))
 			}
-			fmt.Printf("%s\n", string(b))
 			for _, ev := range nwInstEvent.GetNotification() {
 				if nwInst := ev.GetNwInst(); nwInst != nil {
 					s.handleNwInstCfg(ctx, nwInst)
@@ -145,19 +152,21 @@ func (s *server) configHandler(ctx context.Context) {
 				log.Warnf("got empty nwInst, event: %+v", ev)
 			}
 		case event := <-cfgStream:
-			log.Infof("Config notification: %+v", event)
-			b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(event)
-			if err != nil {
-				log.Infof("Config notification Marshal failed: %+v", err)
-				continue
+			if s.config.debug {
+				log.Debugf("Config notification: %+v", event)
+				b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(event)
+				if err != nil {
+					log.Errorf("Config notification Marshal failed: %+v", err)
+					continue
+				}
+				log.Debugf("%s\n", string(b))
 			}
-			fmt.Printf("%s\n", string(b))
 			for _, ev := range event.GetNotification() {
 				if cfg := ev.GetConfig(); cfg != nil {
 					s.handleConfigEvent(ctx, cfg)
 					continue
 				}
-				log.Infof("got empty config, event: %+v", ev)
+				log.Warnf("got empty config, event: %+v", ev)
 			}
 		case <-ctx.Done():
 			return
@@ -166,10 +175,10 @@ func (s *server) configHandler(ctx context.Context) {
 }
 
 func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotification) {
-	log.Infof("handling cfg: %+v", cfg)
-	fmt.Printf("PATH: %s\n", cfg.GetKey().GetJsPath())
-	fmt.Printf("KEYS: %v\n", cfg.GetKey().GetKeys())
-	fmt.Printf("JSON:\n%s\n", cfg.GetData().GetJson())
+	log.Debugf("handling cfg: %+v", cfg)
+	log.Debugf("PATH: %s\n", cfg.GetKey().GetJsPath())
+	log.Debugf("KEYS: %v\n", cfg.GetKey().GetKeys())
+	log.Debugf("JSON:\n%s\n", cfg.GetData().GetJson())
 
 	jsPath := cfg.GetKey().GetJsPath()
 	// collect non commit.end config notifications
@@ -204,7 +213,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			}
 		case customMetricPath:
 			if len(txCfg.Key.Keys) == 0 {
-				log.Infof("%q no keys in cfg notification: %+v", customMetricPath, txCfg)
+				log.Errorf("%q no keys in cfg notification: %+v", customMetricPath, txCfg)
 				return
 			}
 			switch txCfg.Op {
@@ -233,15 +242,15 @@ func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigN
 	}
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
-		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
+		log.Errorf("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
 	b, err := json.MarshalIndent(newCfg, "", "  ")
 	if err != nil {
 		log.Errorf("failed to Marshal baseconfig: %v", err)
-	} else {
-		log.Infof("read baseconfig data: %s", string(b))
+		return
 	}
+	log.Debugf("read baseconfig data: %s", string(b))
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
@@ -266,25 +275,18 @@ func (s *server) handleCfgPrometheusChange(ctx context.Context, cfg *ndk.ConfigN
 	}
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newCfg)
 	if err != nil {
-		log.Infof("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
+		log.Errorf("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
 	b, err := json.MarshalIndent(newCfg, "", "  ")
 	if err != nil {
 		log.Errorf("failed to Marshal baseconfig: %v", err)
-	} else {
-		log.Infof("read baseconfig data: %s", string(b))
+		return
 	}
+	log.Debugf("read baseconfig data: %s", string(b))
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
-
-	// // save current oper state
-	// newCfg.OperState = s.config.baseConfig.OperState
-	// newCfg.Registration.OperState = s.config.baseConfig.Registration.OperState
-	// // store new config
-	// s.config.baseConfig = newCfg
-	// log.Infof("new stored config: %+v", s.config.baseConfig)
 
 	if newCfg.AdminState == adminDisable && s.config.baseConfig.OperState != operDown {
 		// shutdown the http server with a 1s timeout
@@ -323,19 +325,19 @@ func (s *server) handleCfgMetricCreate(ctx context.Context, cfg *ndk.ConfigNotif
 	newMetricConfig := new(metricConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newMetricConfig)
 	if err != nil {
-		log.Infof("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
+		log.Errorf("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
 		return
 	}
-	log.Infof("read metric config data: %+v", newMetricConfig)
+	log.Debugf("read metric config data: %+v", newMetricConfig)
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()
 	if _, ok := s.config.metrics[key]; !ok {
 		s.config.metrics[key] = new(metricConfig)
 	}
-	log.Printf("looking for known metrics with key : %s", key)
+	log.Debugf("looking for known metrics with key : %s", key)
 	if knownMetricPaths, ok := knownMetrics[key]; ok {
-		log.Printf("found known metric paths: %+v", knownMetricPaths)
+		log.Debugf("found known metric paths: %+v", knownMetricPaths)
 		newMetricConfig.Metric.Paths = make([]stringValue, len(knownMetricPaths))
 		for i, p := range knownMetricPaths {
 			newMetricConfig.Metric.Paths[i].Value = p
@@ -352,7 +354,7 @@ func (s *server) handleCfgMetricChange(ctx context.Context, cfg *ndk.ConfigNotif
 	newMetricConfig := new(metricConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newMetricConfig)
 	if err != nil {
-		log.Infof("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
+		log.Errorf("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
 		return
 	}
 	s.config.m.Lock()
@@ -382,10 +384,10 @@ func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk
 	newMetricConfig := new(customMetricConfig)
 	err := json.Unmarshal([]byte(cfg.GetData().GetJson()), newMetricConfig)
 	if err != nil {
-		log.Infof("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
+		log.Errorf("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
 		return
 	}
-	log.Infof("read metric config data: %+v", newMetricConfig)
+	log.Debugf("read metric config data: %+v", newMetricConfig)
 
 	s.config.m.Lock()
 	defer s.config.m.Unlock()

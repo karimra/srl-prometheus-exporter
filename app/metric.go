@@ -1,10 +1,9 @@
-package main
+package app
 
 var knownMetrics = map[string][]string{
 	"interfaces": {
 		"/interface/statistics",
 		"/interface/ethernet/statistics",
-		"/interface/queue-statistics",
 	},
 	"subinterfaces": {
 		"/interface/subinterface/statistics",
