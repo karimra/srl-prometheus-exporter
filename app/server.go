@@ -289,12 +289,16 @@ START:
 			Handler: mux,
 		}
 		var netInstName string
-		if netInst, ok := s.config.nwInst[s.config.baseConfig.NetworkInstance.Value]; ok {
-			netInstName = fmt.Sprintf("%s-%s", netInst.BaseName, s.config.baseConfig.NetworkInstance.Value)
-		} else {
-			log.Errorf("unknown network instance name: %s", s.config.baseConfig.NetworkInstance.Value)
-			return
+		for {
+			if netInst, ok := s.config.nwInst[s.config.baseConfig.NetworkInstance.Value]; ok {
+				netInstName = fmt.Sprintf("%s-%s", netInst.BaseName, s.config.baseConfig.NetworkInstance.Value)
+				break
+			} else {
+				log.Errorf("unknown network instance name: %s", s.config.baseConfig.NetworkInstance.Value)
+				time.Sleep(time.Second)
+			}
 		}
+
 		log.Debugf("using network-instance %q", netInstName)
 		n, err := netns.GetFromName(netInstName)
 		if err != nil {
@@ -478,11 +482,14 @@ NETNS:
 	}
 	// get network instance corresponding netns
 	var netInstName string
-	if netInst, ok := s.config.nwInst[s.config.baseConfig.NetworkInstance.Value]; ok {
-		netInstName = fmt.Sprintf("%s-%s", netInst.BaseName, s.config.baseConfig.NetworkInstance.Value)
-	} else {
-		log.Errorf("unknown network instance name: %s", s.config.baseConfig.NetworkInstance.Value)
-		return
+	for {
+		if netInst, ok := s.config.nwInst[s.config.baseConfig.NetworkInstance.Value]; ok {
+			netInstName = fmt.Sprintf("%s-%s", netInst.BaseName, s.config.baseConfig.NetworkInstance.Value)
+			break
+		} else {
+			log.Errorf("unknown network instance name: %s", s.config.baseConfig.NetworkInstance.Value)
+			time.Sleep(time.Second)
+		}
 	}
 	log.Infof("using network-instance name %q", netInstName)
 
