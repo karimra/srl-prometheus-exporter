@@ -142,7 +142,7 @@ func (s *server) ConfigHandler(ctx context.Context) {
 					log.Errorf("NwInst notification Marshal failed: %+v", err)
 					continue
 				}
-				log.Debugf("%s\n", string(b))
+				log.Debugf("%s", string(b))
 			}
 			for _, ev := range nwInstEvent.GetNotification() {
 				if nwInst := ev.GetNwInst(); nwInst != nil {
@@ -159,7 +159,7 @@ func (s *server) ConfigHandler(ctx context.Context) {
 					log.Errorf("Config notification Marshal failed: %+v", err)
 					continue
 				}
-				log.Debugf("%s\n", string(b))
+				log.Debugf("%s", string(b))
 			}
 			for _, ev := range event.GetNotification() {
 				if cfg := ev.GetConfig(); cfg != nil {
@@ -175,6 +175,9 @@ func (s *server) ConfigHandler(ctx context.Context) {
 }
 
 func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotification) {
+	s.config.m.Lock()
+	defer s.config.m.Unlock()
+
 	log.Debugf("handling cfg: %+v", cfg)
 	log.Debugf("PATH: %s\n", cfg.GetKey().GetJsPath())
 	log.Debugf("KEYS: %v\n", cfg.GetKey().GetKeys())
@@ -228,9 +231,7 @@ func (s *server) handleConfigEvent(ctx context.Context, cfg *ndk.ConfigNotificat
 			log.Errorf("unexpected config path %q", txCfg.GetKey().GetJsPath())
 		}
 	}
-	s.config.m.Lock()
 	s.config.trx = make([]*ndk.ConfigNotification, 0)
-	s.config.m.Unlock()
 }
 
 func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigNotification) {
@@ -245,15 +246,15 @@ func (s *server) handleCfgPrometheusCreate(ctx context.Context, cfg *ndk.ConfigN
 		log.Errorf("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
-	b, err := json.MarshalIndent(newCfg, "", "  ")
-	if err != nil {
-		log.Errorf("failed to Marshal baseconfig: %v", err)
-		return
-	}
-	log.Debugf("read baseconfig data: %s", string(b))
 
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
+	if s.config.debug {
+		b, err := json.MarshalIndent(newCfg, "", "  ")
+		if err != nil {
+			log.Errorf("failed to Marshal baseconfig: %v", err)
+			return
+		}
+		log.Debugf("read baseconfig data: %s", string(b))
+	}
 
 	// set default oper state
 	newCfg.OperState = operDown
@@ -278,23 +279,25 @@ func (s *server) handleCfgPrometheusChange(ctx context.Context, cfg *ndk.ConfigN
 		log.Errorf("failed to marshal config data from path %q: %v", cfg.GetKey().GetJsPath(), err)
 		return
 	}
-	b, err := json.MarshalIndent(newCfg, "", "  ")
-	if err != nil {
-		log.Errorf("failed to Marshal baseconfig: %v", err)
-		return
-	}
-	log.Debugf("read baseconfig data: %s", string(b))
 
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
+	if s.config.debug {
+		b, err := json.MarshalIndent(newCfg, "", "  ")
+		if err != nil {
+			log.Errorf("failed to Marshal baseconfig: %v", err)
+			return
+		}
+		log.Debugf("read baseconfig data: %s", string(b))
+	}
 
 	if newCfg.AdminState == adminDisable && s.config.baseConfig.OperState != operDown {
-		// shutdown the http server with a 1s timeout
-		s.shutdown(ctx, time.Second)
+		// shutdown the http server with a 500ms timeout
+		s.shutdown(ctx, time.Second/2)
 		return
 	}
 	if newCfg.AdminState == adminEnable && s.config.baseConfig.OperState == operDown {
 		// start http server
+		log.Debug("starting server...")
+		s.config.baseConfig.AdminState = adminEnable
 		go s.start(ctx)
 		return
 	}
@@ -330,8 +333,6 @@ func (s *server) handleCfgMetricCreate(ctx context.Context, cfg *ndk.ConfigNotif
 	}
 	log.Debugf("read metric config data: %+v", newMetricConfig)
 
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
 	if _, ok := s.config.metrics[key]; !ok {
 		s.config.metrics[key] = new(metricConfig)
 	}
@@ -357,8 +358,6 @@ func (s *server) handleCfgMetricChange(ctx context.Context, cfg *ndk.ConfigNotif
 		log.Errorf("failed to marshal config data from path %s: %v", cfg.Key.JsPath, err)
 		return
 	}
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
 
 	// store new config
 	s.config.metrics[key].Metric.State = newMetricConfig.Metric.State
@@ -368,8 +367,7 @@ func (s *server) handleCfgMetricChange(ctx context.Context, cfg *ndk.ConfigNotif
 
 func (s *server) handleCfgMetricDelete(ctx context.Context, cfg *ndk.ConfigNotification) {
 	key := cfg.Key.Keys[0]
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
+
 	if _, ok := s.config.metrics[key]; !ok {
 		log.Errorf("Op delete metric, cannot find metric %q", key)
 		return
@@ -389,8 +387,6 @@ func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk
 	}
 	log.Debugf("read metric config data: %+v", newMetricConfig)
 
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
 	if _, ok := s.config.customMetric[key]; !ok {
 		s.config.customMetric[key] = new(customMetricConfig)
 	}
@@ -403,8 +399,7 @@ func (s *server) handleCfgCustomMetricCreateChange(ctx context.Context, cfg *ndk
 
 func (s *server) handleCfgCustomMetricDelete(ctx context.Context, cfg *ndk.ConfigNotification) {
 	key := cfg.Key.Keys[0]
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
+
 	if _, ok := s.config.customMetric[key]; !ok {
 		log.Errorf("Op delete custom metric, cannot find custom metric %q", key)
 		return
@@ -414,12 +409,13 @@ func (s *server) handleCfgCustomMetricDelete(ctx context.Context, cfg *ndk.Confi
 }
 
 func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanceNotification) {
+	s.config.m.Lock()
+	defer s.config.m.Unlock()
+
 	key := nwInst.GetKey()
 	if key == nil {
 		return
 	}
-	s.config.m.Lock()
-	defer s.config.m.Unlock()
 	switch nwInst.Op {
 	case ndk.SdkMgrOperation_Create:
 		s.config.nwInst[key.InstName] = nwInst.Data
@@ -427,6 +423,7 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 			if nwInst.Data.OperIsUp &&
 				s.config.baseConfig.AdminState == adminEnable &&
 				s.config.baseConfig.OperState == operDown {
+				log.Debug("starting server...")
 				go s.start(ctx)
 			}
 		}
@@ -435,12 +432,13 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 		if s.config.baseConfig.NetworkInstance.Value == nwInst.Key.InstName {
 			if !nwInst.Data.OperIsUp {
 				if s.config.baseConfig.OperState == operUp {
-					s.shutdown(ctx, time.Second)
+					s.shutdown(ctx, time.Second/2)
 				}
 				return
 			}
 			if s.config.baseConfig.AdminState == adminEnable &&
 				s.config.baseConfig.OperState == operDown {
+				log.Debug("starting server...")
 				go s.start(ctx)
 			}
 		}
@@ -448,7 +446,7 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 		delete(s.config.nwInst, key.InstName)
 		if s.config.baseConfig.NetworkInstance.Value == nwInst.Key.InstName {
 			if s.config.baseConfig.OperState == operUp {
-				s.shutdown(ctx, time.Second)
+				s.shutdown(ctx, time.Second/2)
 			}
 		}
 	}
