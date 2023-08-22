@@ -12,6 +12,7 @@ import (
 )
 
 func (s *server) updateTelemetry(ctx context.Context, jsPath string, jsData string) {
+	log.Debugf("updating telemetry: %q: %s\n", exporterPath, string(jsData))
 	key := &ndk.TelemetryKey{JsPath: jsPath}
 	data := &ndk.TelemetryData{JsonContent: jsData}
 	info := &ndk.TelemetryInfo{Key: key, Data: data}

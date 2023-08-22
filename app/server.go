@@ -250,6 +250,9 @@ func NewServer(opts ...serverOption) *server {
 }
 
 func (s *server) start(ctx context.Context) {
+	if s.srvCancelFn != nil {
+		s.srvCancelFn()
+	}
 	sctx, cancel := context.WithCancel(ctx)
 	s.srvCancelFn = cancel
 START:
@@ -269,7 +272,11 @@ START:
 			goto START
 		}
 		// create http server
-		promHandler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError})
+		promHandler := promhttp.HandlerFor(
+			registry,
+			promhttp.HandlerOpts{
+				ErrorHandling: promhttp.ContinueOnError,
+			})
 
 		mux := http.NewServeMux()
 		if s.config.baseConfig.HttpPath.Value == "" {
@@ -613,12 +620,14 @@ INITCONSUL:
 	}
 	s.config.baseConfig.Registration.OperState = operUp
 	go s.updatePrometheusBaseTelemetry(ctx, s.config.baseConfig)
+
 	err = s.consulClient.Agent().UpdateTTL(ttlCheckID, "", capi.HealthPassing)
 	if err != nil {
 		log.Errorf("failed to pass the first TTL check: %v", err)
 		time.Sleep(retryInterval)
 		goto INITCONSUL
 	}
+
 	ttl, _ := time.ParseDuration(s.config.baseConfig.Registration.TTL.Value)
 	ticker := time.NewTicker(ttl / 2)
 
