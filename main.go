@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"os"
 	"time"
@@ -72,7 +74,8 @@ READFILE:
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	setupCloseHandler(cancel)
+
 	ctx = metadata.AppendToOutgoingContext(ctx, "agent_name", agentName)
 
 	retryCount = 0
@@ -98,4 +101,16 @@ CRAGENT:
 
 	log.Infof("starting config handler...")
 	server.ConfigHandler(ctx)
+}
+
+func setupCloseHandler(cancelFn context.CancelFunc) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		sig := <-c
+		log.Printf("received signal '%s'. terminating...", sig.String())
+		cancelFn()
+		time.Sleep(500 * time.Millisecond)
+		os.Exit(0)
+	}()
 }

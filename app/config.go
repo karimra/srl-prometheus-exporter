@@ -424,7 +424,9 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 	case ndk.SdkMgrOperation_Create:
 		s.config.nwInst[key.InstName] = nwInst.Data
 		if s.config.baseConfig.NetworkInstance.Value == nwInst.Key.InstName {
-			if nwInst.Data.OperIsUp && s.config.baseConfig.AdminState == adminEnable {
+			if nwInst.Data.OperIsUp &&
+				s.config.baseConfig.AdminState == adminEnable &&
+				s.config.baseConfig.OperState == operDown {
 				go s.start(ctx)
 			}
 		}
@@ -435,10 +437,11 @@ func (s *server) handleNwInstCfg(ctx context.Context, nwInst *ndk.NetworkInstanc
 				if s.config.baseConfig.OperState == operUp {
 					s.shutdown(ctx, time.Second)
 				}
-			} else {
-				if s.config.baseConfig.AdminState == adminEnable && s.config.baseConfig.OperState == operDown {
-					go s.start(ctx)
-				}
+				return
+			}
+			if s.config.baseConfig.AdminState == adminEnable &&
+				s.config.baseConfig.OperState == operDown {
+				go s.start(ctx)
 			}
 		}
 	case ndk.SdkMgrOperation_Delete:
