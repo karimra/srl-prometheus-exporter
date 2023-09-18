@@ -3,7 +3,7 @@ module github.com/karimra/srl-prometheus-exporter
 go 1.19
 
 require (
-	github.com/hashicorp/consul/api v1.24.0
+	github.com/hashicorp/consul/api v1.25.0
 	github.com/karimra/srl-ndk-demo v0.1.1
 	github.com/nokia/srlinux-ndk-go v0.1.1
 	github.com/openconfig/gnmi v0.9.1
