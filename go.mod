@@ -7,7 +7,7 @@ require (
 	github.com/karimra/srl-ndk-demo v0.1.1
 	github.com/nokia/srlinux-ndk-go v0.1.1
 	github.com/openconfig/gnmi v0.9.1
-	github.com/openconfig/gnmic v0.31.7
+	github.com/openconfig/gnmic v0.32.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
