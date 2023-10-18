@@ -6,12 +6,12 @@ on:
       - v*
 
 env:
-  GOVER: 1.19.5
+  GOVER: 1.21.3
   GORELEASER_VER: v1.19.2
 
-jobs:  
+jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -22,7 +22,7 @@ jobs:
           CGO_ENABLED: 0
 
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - test
     steps:
@@ -38,6 +38,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: ${{ env.GORELEASER_VER }}
-          args: release --rm-dist -f .goreleaser.yml
+          args: release --clean -f .goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}

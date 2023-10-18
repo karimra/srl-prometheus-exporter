@@ -19,6 +19,12 @@ checksum:
   name_template: "checksums.txt"
 snapshot:
   name_template: "{{ .Tag }}"
+publishers:
+  - name: fury.io deb/rpm packages
+    ids:
+      - srl-prometheus-exporter-nfpms # this id belongs to nfpm section and is used to only upload artifacts from nfpm
+    dir: "{{ dir .ArtifactPath }}"
+    cmd: curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/srlinux/
 changelog:
   sort: asc
   filters:
@@ -27,7 +33,7 @@ changelog:
       - "^test:"
 
 nfpms:
-  - id: srl-prometheus-exporter
+  - id: srl-prometheus-exporter-nfpms
     file_name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -40,15 +46,23 @@ nfpms:
     description: A Prometheus exporter for Nokia SR Linux
     formats:
       - rpm
+      - deb
     license: "BSD 2"
     bindir: /usr/local/bin/
     contents:
       - src: ./yang/prometheus-exporter.yang
         dst: /opt/prometheus-exporter/yang/prometheus-exporter.yang
+      - src: ./scripts/postinstall.sh
+        dst: /opt/prometheus-exporter/scripts/postinstall.sh
+      - src: ./scripts/postremove.sh
+        dst: /opt/prometheus-exporter/scripts/postremove.sh
       - src: ./yml/prometheus-exporter.yml
         dst: /etc/opt/srlinux/appmgr/prometheus-exporter.yml
       - src: ./metrics.yaml
-        dst: /usr/local/bin/metrics.yaml
+        dst: /opt/prometheus-exporter/metrics.yaml
+    scripts:
+      postinstall: "scripts/postinstall.sh"
+      postremove: "scripts/postremove.sh"
     overrides:
       rpm:
         scripts:

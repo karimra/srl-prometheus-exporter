@@ -10,7 +10,7 @@ prometheus-exporter:
     failure-threshold: 10
     failure-action: 'wait=60'
     yang-modules:
-        names: 
+        names:
             - "prometheus-exporter"
         source-directories:
             - "/opt/prometheus-exporter/yang/"

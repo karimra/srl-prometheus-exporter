@@ -4,19 +4,19 @@ metrics:
     - interface/statistics
     - interface/ethernet/statistics
 
-  subinterfaces: 
+  subinterfaces:
     - interface/subinterface/statistics
 
-  lldp: 
+  lldp:
     - system/lldp/interface/statistics
 
-  platform: 
+  platform:
     - platform/control/disk/statistics
     - platform/control/cpu/software-interrupt
     - platform/control/memory
     - platform/linecard/forwarding-complex/buffer-memory
 
-  acl: 
+  acl:
     - acl/policers/system-cpu-policer/statistics
     - acl/policers/policer/statistics
     - acl/ipv4-filter/entry/statistics
@@ -24,35 +24,35 @@ metrics:
     - acl/cpm-filter/ipv4-filter/entry/statistics
     - acl/cpm-filter/ipv6-filter/entry/statistics
 
-  aaa: 
+  aaa:
     - system/aaa/server-group/server/statistics
 
-  network-instance-bridge-table: 
+  network-instance-bridge-table:
     - network-instance/bridge-table/statistics
 
-  network-instance-icmp: 
+  network-instance-icmp:
     - network-instance/icmp/statistics
 
-  network-instance-icmp6: 
+  network-instance-icmp6:
     - network-instance/icmp6/statistics
 
-  route-table-ipv4-unicast: 
+  route-table-ipv4-unicast:
     - network-instance/route-table/ipv4-unicast/statistics
 
-  route-table-ipv6-unicast: 
+  route-table-ipv6-unicast:
     - network-instance/route-table/ipv6-unicast/statistics
 
-  mpls: 
+  mpls:
     - network-instance/route-table/mpls/statistics
 
-  isis: 
+  isis:
     - network-instance/protocols/isis/instance/statistics
 
-  bgp: 
+  bgp:
     - network-instance/protocols/bgp/group/statistics
 
-  udp: 
+  udp:
     - network-instance/udp/statistics
 
-  tcp: 
+  tcp:
     - network-instance/tcp/statistics
