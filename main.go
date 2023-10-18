@@ -3,25 +3,25 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
-
-	"os"
 	"time"
 
 	agent "github.com/karimra/srl-ndk-demo"
-	"github.com/karimra/srl-prometheus-exporter/app"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/yaml.v2"
+
+	"github.com/karimra/srl-prometheus-exporter/app"
 )
 
 const (
 	retryInterval         = 2 * time.Second
 	maxRetries            = 50
 	agentName             = "prometheus-exporter"
-	defaultConfigFileName = "./metrics.yaml"
+	defaultConfigFileName = "/opt/prometheus-exporter/metrics.yaml"
 )
 
 var version = "dev"
