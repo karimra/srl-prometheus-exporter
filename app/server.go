@@ -22,8 +22,8 @@ import (
 	capi "github.com/hashicorp/consul/api"
 	agent "github.com/karimra/srl-ndk-demo"
 	"github.com/openconfig/gnmi/proto/gnmi"
-	"github.com/openconfig/gnmic/formatters"
-	"github.com/openconfig/gnmic/utils"
+	"github.com/openconfig/gnmic/pkg/formatters"
+	gpath "github.com/openconfig/gnmic/pkg/path"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -369,7 +369,7 @@ func (s *server) createSubscribeRequest(metricName string) (*gnmi.SubscribeReque
 	}
 	subscriptions := make([]*gnmi.Subscription, numPaths)
 	for i, p := range paths {
-		gnmiPath, err := utils.ParsePath(p)
+		gnmiPath, err := gpath.ParsePath(p)
 		if err != nil {
 			return nil, fmt.Errorf("metric %q, path %q parse error: %v", metricName, p, err)
 		}
@@ -706,36 +706,36 @@ START:
 
 		for _, n := range rsp.GetNotification() {
 			for _, u := range n.GetUpdate() {
-				path := utils.GnmiPathToXPath(u.GetPath(), true)
-				if strings.HasPrefix(path, "interface") {
-					if strings.Contains(path, "/ipv4/address/status") {
+				p := gpath.GnmiPathToXPath(u.GetPath(), true)
+				if strings.HasPrefix(p, "interface") {
+					if strings.Contains(p, "/ipv4/address/status") {
 						ip := getPathKeyVal(u.GetPath(), "address", "ip-prefix")
 						sysInfo.IPAddrV4 = strings.Split(ip, "/")[0]
 					}
-					if strings.Contains(path, "/ipv6/address/status") {
+					if strings.Contains(p, "/ipv6/address/status") {
 						ip := getPathKeyVal(u.GetPath(), "address", "ip-prefix")
 						sysInfo.IPAddrV6 = strings.Split(ip, "/")[0]
 					}
 				}
-				if strings.Contains(path, "system/name") {
+				if strings.Contains(p, "system/name") {
 					sysInfo.Name = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "system/information/version") {
+				if strings.Contains(p, "system/information/version") {
 					sysInfo.Version = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "platform/chassis/type") {
+				if strings.Contains(p, "platform/chassis/type") {
 					sysInfo.ChassisType = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "platform/chassis/mac-address") {
+				if strings.Contains(p, "platform/chassis/mac-address") {
 					sysInfo.ChassisMacAddress = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "platform/chassis/part-number") {
+				if strings.Contains(p, "platform/chassis/part-number") {
 					sysInfo.ChassisPartNumber = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "platform/chassis/clei-code") {
+				if strings.Contains(p, "platform/chassis/clei-code") {
 					sysInfo.ChassisCLEICode = u.GetVal().GetStringVal()
 				}
-				if strings.Contains(path, "platform/chassis/serial-number") {
+				if strings.Contains(p, "platform/chassis/serial-number") {
 					sysInfo.ChassisSerialNumber = u.GetVal().GetStringVal()
 				}
 			}
