@@ -1,10 +1,11 @@
 module github.com/karimra/srl-prometheus-exporter
 
 go 1.21
+toolchain go1.21.4
 
 require (
 	github.com/hashicorp/consul/api v1.26.1
-	github.com/karimra/srl-ndk-demo v0.1.1
+	github.com/karimra/srl-ndk-demo v0.1.2
 	github.com/nokia/srlinux-ndk-go v0.1.1
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnmic v0.33.0
@@ -51,7 +52,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.6 // indirect
 	github.com/aws/smithy-go v1.11.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bufbuild/protocompile v0.5.1 // indirect
+	github.com/bufbuild/protocompile v0.6.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/docker/libkv v0.2.2-0.20180912205406-458977154600 // indirect
@@ -100,7 +101,7 @@ require (
 	github.com/itchyny/gojq v0.12.13 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jhump/protoreflect v1.15.1 // indirect
+	github.com/jhump/protoreflect v1.15.3 // indirect
 	github.com/jlaffaye/ftp v0.2.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/joho/godotenv v1.4.0 // indirect
@@ -117,6 +118,10 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.1.0 // indirect
+	github.com/openconfig/gnmic/pkg/path v0.1.1 // indirect
+	github.com/openconfig/gnmic/pkg/target v0.1.1 // indirect
+	github.com/openconfig/gnmic/pkg/types v0.1.1 // indirect
+	github.com/openconfig/gnmic/pkg/utils v0.1.0 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.6 // indirect
@@ -128,7 +133,6 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	github.com/zealic/xignore v0.3.3 // indirect
@@ -142,7 +146,7 @@ require (
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.12.0 // indirect
+	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
