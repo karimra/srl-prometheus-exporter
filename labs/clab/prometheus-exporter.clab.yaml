@@ -9,7 +9,7 @@ topology:
     srl:
       image: ghcr.io/nokia/srlinux:latest
       binds:
-        - ./app:/tmp/rpm:ro
+        - ./app:/tmp/pkg:ro
 
   nodes:
     srl1:
