@@ -5,6 +5,8 @@ updates:
   value:
     admin-state: enable
     use-authentication: false
+    services:
+      - gnmi
 
 - path: /acl/cpm-filter/ipv4-filter/entry[sequence-id=281]
   encoding: json_ietf

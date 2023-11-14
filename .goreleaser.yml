@@ -11,7 +11,7 @@ builds:
 archives:
   - name_template: >-
       {{ .ProjectName }}_
-      {{- .Version }}_
+      {{- slice .Version 1 }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
@@ -36,7 +36,7 @@ nfpms:
   - id: srl-prometheus-exporter-nfpms
     file_name_template: >-
       {{ .ProjectName }}_
-      {{- .Version }}_
+      {{- slice .Version 1 }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}

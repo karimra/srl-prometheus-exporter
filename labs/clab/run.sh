@@ -2,27 +2,33 @@
 
 ./stop.sh
 
-version=0.2.8
+version=0.2.13
 username=admin
 password=NokiaSrl1!
+pkg="deb"
 
-filename="srl-prometheus-exporter_${version}_Linux_x86_64.rpm"
+# script path
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-rm -rf app
-mkdir -p app
+rm -rf $SCRIPTPATH/app
+mkdir -p $SCRIPTPATH/app
+
+filename="srl-prometheus-exporter_${version}_Linux_x86_64.$pkg"
+
+cd $SCRIPTPATH/../..
 
 if [[ $1 == "build" ]]; then
-    # build RPM
+    # build pkgs
     echo "building using goreleaser"
-    cd ../..
     goreleaser --snapshot --clean release
-    cp dist/*.rpm labs/clab/app/
-    cd labs/clab
+    cp dist/*.${pkg} labs/clab/app/
 else
-    # download the app installation RPM
-    echo "downloading the app RPM"
+    # download the app installation package
+    echo "downloading the app package"
     curl -sSL https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/${filename} -o app/${filename}
 fi
+
+cd $SCRIPTPATH
 
 #deploy the lab
 sudo clab dep -c
@@ -43,7 +49,14 @@ clab_exec_args="--topo prometheus-exporter.clab.yaml --label clab-node-kind=srl 
 sudo clab exec $clab_exec_args "sr_cli show system application"
 
 # install the RPM located in /tmp/rpm
-sudo clab exec $clab_exec_args "sudo rpm -U /tmp/rpm/*rpm"
+
+if [[ $pkg == "rpm" ]]; then
+    sudo clab exec $clab_exec_args "sudo rpm -U /tmp/pkg/$filename"
+else
+    sudo clab exec $clab_exec_args "sudo dpkg -i /tmp/pkg/$filename"
+fi
+
+sleep 10
 
 # reload the app manager so it picks up the newly installed app
 sudo clab exec $clab_exec_args "sr_cli tools system app-management application app_mgr reload"
@@ -84,8 +97,8 @@ gnmic $gnmic_args -e json_ietf \
                 --update-value enable
 
 # check that the SRLs prometheus endpoint is UP
-# curl clab-prom-exporter-srl1:8888/metrics
-# curl clab-prom-exporter-srl2:8888/metrics
+curl -sSL clab-prom-exporter-srl1:8888/metrics
+curl -sSL clab-prom-exporter-srl2:8888/metrics
 
 # navigate to the prometheus server GUI on <your serverIP>:9090/targets
 # you should see that both SRL prometheus exporters are UP and being scraped by Prometheus
