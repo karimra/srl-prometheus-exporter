@@ -2,7 +2,7 @@
 
 ./stop.sh
 
-version=0.2.13
+version=0.2.14
 username=admin
 password=NokiaSrl1!
 pkg="deb"
@@ -12,20 +12,20 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 rm -rf $SCRIPTPATH/app
 mkdir -p $SCRIPTPATH/app
+echo $SCRIPTPATH
 
 filename="srl-prometheus-exporter_${version}_Linux_x86_64.$pkg"
-
 cd $SCRIPTPATH/../..
 
 if [[ $1 == "build" ]]; then
     # build pkgs
     echo "building using goreleaser"
     goreleaser --snapshot --clean release
-    cp dist/*.${pkg} labs/clab/app/
+    cp dist/*.${pkg} $SCRIPTPATH/app/
 else
     # download the app installation package
     echo "downloading the app package"
-    curl -sSL https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/${filename} -o app/${filename}
+    curl -sSL https://github.com/karimra/srl-prometheus-exporter/releases/download/v${version}/${filename} -o $SCRIPTPATH/app/${filename}
 fi
 
 cd $SCRIPTPATH
