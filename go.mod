@@ -1,6 +1,6 @@
 module github.com/karimra/srl-prometheus-exporter
 
-go 1.21.1
+go 1.21.3
 
 require (
 	github.com/hashicorp/consul/api v1.26.1

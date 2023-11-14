@@ -11,14 +11,14 @@ builds:
 archives:
   - name_template: >-
       {{ .ProjectName }}_
-      {{- slice .Version 1 }}_
+      {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ .Tag }}"
+  name_template: "{{ .Version }}"
 publishers:
   - name: fury.io deb/rpm packages
     ids:
@@ -36,7 +36,7 @@ nfpms:
   - id: srl-prometheus-exporter-nfpms
     file_name_template: >-
       {{ .ProjectName }}_
-      {{- slice .Version 1 }}_
+      {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
