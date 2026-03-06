@@ -26,6 +26,10 @@ module prometheus-exporter {
         "This module defines configuration and operational state data related to the SRLinux Prometheus Exporter.";
 
     // revision(s)
+    revision "2026-03-05" {
+        description
+          "prometheus-exporter 0.2.15";
+    }
     revision "2020-10-15" {
         description
           "prometheus-exporter 0.1.0";
@@ -61,7 +65,7 @@ module prometheus-exporter {
             }
             leaf tls-profile {
                 type leafref {
-                    path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+                    path "/srl-system:system/srl-tls:tls/srl-tls:profile/srl-tls:name";
                 }
                 srl-ext:show-importance high;
                 description
