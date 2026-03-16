@@ -5,7 +5,7 @@ go 1.21.3
 require (
 	github.com/hashicorp/consul/api v1.26.1
 	github.com/karimra/srl-ndk-demo v0.1.2
-	github.com/nokia/srlinux-ndk-go v0.1.1
+	github.com/nokia/srlinux-ndk-go v0.2.0
 	github.com/openconfig/gnmi v0.10.0
 	github.com/openconfig/gnmic v0.34.2
 	github.com/openconfig/gnmic/pkg/path v0.1.1
